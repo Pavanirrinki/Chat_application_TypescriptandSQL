@@ -416,5 +416,16 @@ return res.status(200).send(result.rows)
     return res.status(500).send({error:(error as Error).message})
   }
 })
+
+//--------------------------------ADD PROFIILES TO GROUP-------------------------------------------
+router.post("/add_members_to_group/:groupId",async(req,res)=>{
+ const {profiles} = req.body;
+ const {groupId} = req.params;
+ const connection =await connectToDatabase();
+  profiles.map(async (data: any)=>{
+    console.log(groupId,data,"ffff");
+    // const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,data});
+  })
+})
   return router;
 };
