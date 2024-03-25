@@ -10,6 +10,8 @@ import NotFound from './Components/NotFound';
 import { ChatContext } from './Components/Context';
 import { io } from 'socket.io-client';
 import Statuses from './Components/Statuses';
+import Groups from './Components/Groups';
+import CheckboxListSecondary from './Components/Allprofiles';
 
 function Mainscreen(){
  const [receiverId,setReceiverId] = useState<string>('');
@@ -57,6 +59,8 @@ console.log("socketed123",socketed);
         <Route path='/signup' element={<Signup />} />
         <Route path='/login' element={(!isLoggedIn) ? <Login /> : <Navigate to='/' />}/>
         <Route path="/statuses" element={<Statuses />} />
+        <Route path="/groups" element={<Groups />} />
+       <Route path ="/all_profiles" element={<CheckboxListSecondary />} />
         <Route path ='*'  element={<NotFound />} />
 
       </Routes>

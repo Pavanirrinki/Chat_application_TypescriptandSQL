@@ -60,6 +60,7 @@ const CustomizedInputBase: React.FC<CustomizedInputBaseProps> = ({ changehandler
         <MenuItem onClick={handleClose}>Chats</MenuItem>
         <MenuItem onClick={(e)=>submitlogout(e)}>Logout</MenuItem>
         <MenuItem onClick={()=>{navigate("/statuses")}}>Status</MenuItem>
+        <MenuItem onClick={()=>{navigate("/groups")}}>Groups</MenuItem>
       </Menu>
     </div>
       <InputBase

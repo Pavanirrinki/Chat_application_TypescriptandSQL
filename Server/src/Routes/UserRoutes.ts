@@ -104,7 +104,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
                   last_name: foundArray[2],
                   email: foundArray[3],
                   mobile: foundArray[5],
-                  profile_pic: foundArray[6], // Send updated profile_pic in the response
+                  profile_pic: foundArray[6],
                 };
                 await connection.close();
                 return res.json({ token, sendeddata });
@@ -355,14 +355,66 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
   });
 
 
-  //-------------------------------LOGIN USER STATUSES---------------------------------------------------
-  router.get("/login_user_statuses/:userId",async(req,res)=>{
+  //-------------------------------CREATE GROUP---------------------------------------------------
+  router.post("/create_group",async(req,res)=>{
     try{
-     
+     const {groupname,created_by} =req.body;
+     const connection = connectToDatabase();
+     const uid = await new ShortUniqueId({
+      length: 6,
+      dictionary: "number",
+    });
+    const groupId = await uid.rnd();
+     const create_group = (await connection).execute(`INSERT INTO GROUPS_TABLE(GROUPID,GROUPNAME,CREATED_BY,CREATED_AT) VALUES 
+     (:groupId,:groupname,:created_by,SYSTIMESTAMP)`,{groupId,groupname,created_by});
+     const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,created_by});
+     (await connection).commit();
+     (await connection).close();
+     return res.status(200).send("SUCCESSFULLY CREATED GROUP");
 
     }catch(error){
-      return res.status(500).send({error:(error as Error).message})
+      return res.status(500).send({error:(error as Error).message});
     }
   })
+  //-------------------------ALL GROUPS OF PARTICULAR USER------------------------------------------------------
+  router.get("/all_groups_in_user/:userid", async (req, res) => {
+    try {
+        const { userid } = req.params;
+        const connection = await connectToDatabase();
+        const result = await connection.execute(`
+            SELECT *
+            FROM GROUPS_TABLE t1
+            INNER JOIN USERS_IN_GROUPS t2 ON t1.GROUPID = t2.ID
+            WHERE t2.USERID = :userid`, 
+            { userid }
+        );
+        await connection.close();
+        
+        if (result.rows && result.rows.length > 0) {
+            const response = result.rows.map((row:any) => ({
+                groupId: row[0], 
+                groupName: row[1], 
+                created_by: row[2],
+                profile_pic:row[4]
+            }));
+            return res.status(200).send(response);
+        }
+    } catch (error) {
+        return res.status(500).send({ error:(error as Error).message });
+    }
+});
+
+// -------------------------ALL USERS OF PARTICULAR GROUP--------------------------------------------------------
+router.get("/users_in_group/:groupId",async(req,res)=>{
+  const {groupId} = req.params;
+  try{
+const connection = await connectToDatabase();
+const result = await connection.execute(`SELECT * FROM USERS_IN_GROUPS WHERE ID = :groupId`,{groupId});
+await connection.close();
+return res.status(200).send(result.rows)
+  }catch(error){
+    return res.status(500).send({error:(error as Error).message})
+  }
+})
   return router;
 };
