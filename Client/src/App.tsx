@@ -60,7 +60,7 @@ console.log("socketed123",socketed);
         <Route path='/login' element={(!isLoggedIn) ? <Login /> : <Navigate to='/' />}/>
         <Route path="/statuses" element={<Statuses />} />
         <Route path="/groups" element={<Groups />} />
-       <Route path ="/all_profiles" element={<CheckboxListSecondary />} />
+       <Route path ="/all_profiles/:groupId" element={<CheckboxListSecondary />} />
         <Route path ='*'  element={<NotFound />} />
 
       </Routes>

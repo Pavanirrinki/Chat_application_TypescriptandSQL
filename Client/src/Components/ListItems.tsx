@@ -26,7 +26,7 @@ export function AlignItemsList({allgroupsofuser,setGroupId}:{allgroupsofuser:all
                 <Avatar alt="Remy Sharp" src={userdata?.profile_pic ? userdata?.profile_pic.toString() : ''}/>
             </ListItemAvatar>
             <ListItemText
-                primary={userdata?.groupName}
+                primary={`${userdata?.groupName}`}
                 secondary={
                     <React.Fragment>
                         <Typography

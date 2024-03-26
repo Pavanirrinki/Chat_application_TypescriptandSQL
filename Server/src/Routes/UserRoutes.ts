@@ -419,13 +419,69 @@ return res.status(200).send(result.rows)
 
 //--------------------------------ADD PROFIILES TO GROUP-------------------------------------------
 router.post("/add_members_to_group/:groupId",async(req,res)=>{
+  try{
  const {profiles} = req.body;
  const {groupId} = req.params;
  const connection =await connectToDatabase();
   profiles.map(async (data: any)=>{
     console.log(groupId,data,"ffff");
-    // const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,data});
-  })
+     const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,created_by: data});
+     await connection.commit();
+     await connection.close();
+  });
+ 
+  return res.status(200).send("Profiles Added To Group Successfully");
+}catch(error){
+  return res.status(500).send({error:(error as Error).message});
+}
+});
+
+//-----------------------------------GET GROUP DATA-----------------------------------------------
+router.get('/group_data/:groupId',async(req,res)=>{
+  try{
+    const {groupId} = req.params;
+     const connection = await connectToDatabase();
+     const group_data = await connection.execute(`SELECT *  FROM GROUPS_TABLE WHERE GROUPID=:groupId`,[groupId]);
+     const group_messages = await connection.execute(`SELECT * FROM users_data
+     INNER JOIN messeges_in_group_table ON users_data.ID = messeges_in_group_table.SENDERID where 
+     messeges_in_group_table.GROUPID =:groupId ORDER BY messeges_in_group_table.CREATED_AT
+     `,[groupId]);
+     const count_of_users = await connection.execute (`SELECT COUNT(*) FROM USERS_IN_GROUPS WHERE ID=:groupId`,[groupId]);
+    await connection.close();
+    return res.status(200).send({ groupData: group_data.rows, groupMessages: group_messages.rows,count:count_of_users.rows});
+
+  }catch(error){
+         return res.status(500).send({error:(error as Error).message})
+  }
+})
+
+
+//----------------------------SEND MESSAGE TO GROUP-----------------------------------------------
+router.post("/add_message_to_group/:groupId",async(req,res)=>{
+  try{
+     const {senderId,message} = req.body;
+     const {groupId} = req.params;
+     const connection = await connectToDatabase();
+     const add_message_to_group = await connection.execute(`INSERT INTO MESSEGES_IN_GROUP_TABLE(GROUPID,SENDERID,MESSAGE,CREATED_AT) 
+     VALUES(:groupId,:senderId,:message,SYSTIMESTAMP)`,{groupId,senderId,message});
+     await connection.commit();
+     await connection.close();
+     return res.status(200).send('Message Sended to Group')
+  }catch(error){ 
+    return res.status(500).send({error:(error as Error).message})
+  }
+})
+//-----------------------------------------PROFILES DISPLAY NOT PRESENT IN GROUP--------------------------------
+router.get('/profiles_display_not_present_in_group/:groupId',async(req,res)=>{
+  try{
+     const {groupId} = req.params;
+     const connection = await connectToDatabase();
+     const users_not_their_in_group = await connection.execute(`select users_data.ID from users_data left join users_in_groups 
+     on users_data.ID = users_in_groups.USERID WHERE users_in_groups.ID =:groupId`,{groupId});
+     return res.status(200).send(users_not_their_in_group.rows);
+  }catch(error){ 
+    return res.status(500).send({error : (error as Error).message})
+  }
 })
   return router;
 };

@@ -1,17 +1,4 @@
-import {Box,Button,CardHeader,Container, Grid,IconButton,InputBase,ListItem,
-  Menu,
-  MenuItem,
-  Paper,
-  TextField,
-  Typography,
-  Avatar,
-  Card,
-  Chip,
-  List,
-  ListItemAvatar,
-  ListItemText,
-  Stack,
-} from "@mui/material";
+import { Box,Button,CardHeader,Container,Grid,IconButton,InputBase,ListItem,Menu,MenuItem,Paper,TextField,Typography,Avatar, Card, Chip, List, ListItemAvatar,ListItemText,Stack} from"@mui/material";
 import React, { useEffect } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
@@ -23,11 +10,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import axios, { AxiosResponse } from "axios";
 import { API } from "./Api";
 import { AlignItemsList } from "./ListItems";
-import ReplyIcon from "@mui/icons-material/Reply";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Navigate, useNavigate } from "react-router-dom";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import {useNavigate } from "react-router-dom";
 export interface allgroupsofuserprops {
   created_by: string;
   groupId: number;
@@ -35,30 +20,30 @@ export interface allgroupsofuserprops {
   profile_pic: null | string;
 }
 function Groups() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(null);
+  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(
+    null
+  );
   const [opened, setOpened] = React.useState<boolean>(false);
   const [groupname, setGroupname] = React.useState<string>("");
-  const [allgroupsofuser, setAllgroupsofuser] = React.useState<allgroupsofuserprops[] | null>(null);
+  const [allgroupsofuser, setAllgroupsofuser] = React.useState<
+    allgroupsofuserprops[] | null
+  >(null);
+  const [groupmessageswithdata, setGroupmessageswithdata] =
+    React.useState<any>(null);
   const [groupId, setGroupId] = React.useState<number | null>(null);
+  const [message, setMessage] = React.useState<string>("");
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
 
-
-const addmembertogroup = Boolean(anchorElement);
+  const addmembertogroup = Boolean(anchorElement);
   const handleClicked = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElement(event.currentTarget);
   };
   const addmembertogroupclose = () => {
     setAnchorElement(null);
   };
-
-
-
-
-
-
 
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -87,6 +72,18 @@ const addmembertogroup = Boolean(anchorElement);
         console.log((error as Error).message);
       });
   }, []);
+
+  useEffect(() => {
+    axios
+      .get(API + `group_data/${groupId}`)
+      .then((data) => {
+        console.log(data.data, "creative thinking");
+        setGroupmessageswithdata(data.data);
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+  }, [groupId]);
   const handlesubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     axios
@@ -111,7 +108,22 @@ const addmembertogroup = Boolean(anchorElement);
       });
     handleClosed();
   };
-  console.log("groupId", groupId);
+  const SendMessage = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+    axios
+      .post(API + `add_message_to_group/${groupId}`, {
+        senderId: parsed_data?.sendeddata?.userId,
+        message,
+      })
+      .then((data) => {
+        console.log(data.data);
+        setMessage(" ");
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+  };
+  console.log("groupId", groupmessageswithdata, "groupId");
   return (
     <Container>
       <Grid container>
@@ -167,208 +179,262 @@ const addmembertogroup = Boolean(anchorElement);
           )}
         </Grid>
         <Grid item xs={8}>
-    {/*--------------------------- HEADER COMPOINENT ----------------------------------------------*/}
-    <Card
-      sx={{
-        borderRadius: 0,
-        position:"fixed",
-        zIndex:1000,
-      width: "63%",
-      }}
-      elevation={0}
-    >
-      <CardHeader
-        avatar={
-          <>
-            <Button sx={{ minWidth: "auto", mr: 1 }}>
-              <ArrowBackIcon />
-            </Button>
-            <Avatar>R</Avatar>
-          </>
-        }
-        action={
-          <>
-          <Button
-        id="basic-button"
-        aria-controls={addmembertogroup ? 'basic-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={addmembertogroup ? 'true' : undefined}
-        onClick={handleClicked}
-      >
-      <IconButton>
-        <MoreVertIcon />
-      </IconButton>
-      </Button>
-           
-          </>
-        }
-          title='roomData.receiver.name'
-        subheader={
-          <Typography variant="caption">roomData.receiver.email</Typography>
-        }
-      />
-     
-    </Card>
-
-{/* -------------------------------GROUP CHATTING MEMU ICON----------------------------------------- */}
-    <Menu
-        id="basic-menu"
-        anchorEl={anchorElement}
-        open={addmembertogroup}
-        onClose={addmembertogroupclose}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}
-      >
-        <MenuItem onClick={()=>navigate("/all_profiles")}>Add Member</MenuItem>
-     </Menu>
-{/*------------------------------ CHAT AREA COMPONENT---------------------------------------------- */}
-<Box sx={{ overflowY: "auto", flex: "1 0 0", background: "#f9f9f9" }}>
-      <Stack
-        direction="row"
-        justifyContent="center"
-        sx={{
-          py: 2,
-          position: "sticky",
-          top: 0,
-          zIndex: 2,
-          background: "#f9f9f9",
-          marginTop:"80px"
-        }}
-      >
-        <Chip label="Today" />
-      </Stack>
-      <List sx={{ p: 0, overflowY: "auto", flex: "1 0 0" }}>
-       
-         <ListItem sx={{ mb: 2 }}>
-          <Box sx={{ display: "flex", width: "80%" }}>
-            <ListItemAvatar>
-              <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
-            </ListItemAvatar>
-            <Paper sx={{ width: "100%", p: 1.5 }}>
-              <ListItemText
-                sx={{ m: 0 }}
-                primary="Vikas Kumar"
-                secondary={
-                  <Typography variant="caption">
-                    Lorem Ipsum is simply dummy text of the printing and
-                    typesetting industry. Lorem Ipsum has been the industry's
-                    standard dummy text ever since the 1500s, when
-                  </Typography>
-                }
-              />
-              <Box
+          {groupId ? (
+            <Container>
+              {/*--------------------------- HEADER COMPOINENT ----------------------------------------------*/}
+              <Card
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mt: 1,
+                  borderRadius: 0,
+                  position: "fixed",
+                  zIndex: 1000,
+                  width: "63%",
+                }}
+                elevation={0}
+              >
+                <CardHeader
+                  avatar={
+                    <>
+                      <Button sx={{ minWidth: "auto", mr: 1 }}>
+                        <ArrowBackIcon />
+                      </Button>
+                      <Avatar></Avatar>
+                    </>
+                  }
+                  action={
+                    <>
+                      <Button
+                        id="basic-button"
+                        aria-controls={
+                          addmembertogroup ? "basic-menu" : undefined
+                        }
+                        aria-haspopup="true"
+                        aria-expanded={addmembertogroup ? "true" : undefined}
+                        onClick={handleClicked}
+                      >
+                        <IconButton>
+                          <MoreVertIcon />
+                        </IconButton>
+                      </Button>
+                    </>
+                  }
+                  title={
+                    groupmessageswithdata &&
+                    groupmessageswithdata?.groupData[0][1]
+                  }
+                  subheader={
+                    <Chip
+                      label={`${
+                        groupmessageswithdata && groupmessageswithdata?.count[0]
+                      } ${
+                        groupmessageswithdata?.count[0] == 1
+                          ? "Member"
+                          : "Members"
+                      }`}
+                      color="success"
+                      clickable
+                    />
+                  }
+                />
+              </Card>
+
+              {/* -------------------------------GROUP CHATTING MEMU ICON----------------------------------------- */}
+              <Menu
+                id="basic-menu"
+                anchorEl={anchorElement}
+                open={addmembertogroup}
+                onClose={addmembertogroupclose}
+                MenuListProps={{
+                  "aria-labelledby": "basic-button",
                 }}
               >
-                <Typography variant="body2">12.20 PM</Typography>
-                
+                <MenuItem onClick={() => navigate(`/all_profiles/${groupId}`)}>
+                  Add Member
+                </MenuItem>
+              </Menu>
+              {/*------------------------------ CHAT AREA COMPONENT---------------------------------------------- */}
+              <Container sx={{ marginBottom: "80px", paddingTop: "80px" }}>
+                {groupmessageswithdata?.groupMessages &&
+                  groupmessageswithdata?.groupMessages.map(
+                    (data: string[], index: any) => {
+                      console.log(data, "chalo ji");
+
+                      return (
+                        <Box
+                          sx={{
+                            overflowY: "auto",
+                            flex: "1 0 0",
+                            background: "#f9f9f9",
+                          }}
+                        >
+                          <Stack
+                            direction="row"
+                            justifyContent="center"
+                            sx={{
+                              py: 2,
+                              position: "sticky",
+                              top: 0,
+                              zIndex: 2,
+                              background: "#f9f9f9",
+                            }}
+                          >
+                            <Chip
+                              label={new Date(data[11]).toLocaleDateString()}
+                            />
+                          </Stack>
+                          <List sx={{ p: 0, overflowY: "auto", flex: "1 0 0" }}>
+                            {/* ----------------------------------others send messages-------------------------------------------------------------------------    */}
+                            {parsed_data?.sendeddata?.userId.toString() !==
+                            data[9] ? (
+                              <ListItem sx={{ mb: 2 }}>
+                                <Box sx={{ display: "flex", width: "80%" }}>
+                                  <ListItemAvatar>
+                                    <Avatar alt="Remy Sharp" src={data[6]} />
+                                  </ListItemAvatar>
+                                  <Paper sx={{ width: "100%", p: 1.5 }}>
+                                    <ListItemText
+                                      sx={{ m: 0 }}
+                                      primary={`${data[1]} ${data[2]}`}
+                                      secondary={
+                                        <Typography variant="caption">
+                                          {data[10]}
+                                        </Typography>
+                                      }
+                                    />
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        mt: 1,
+                                      }}
+                                    >
+                                      <Typography variant="body2">
+                                        {new Date(
+                                          data[11]
+                                        ).toLocaleTimeString()}
+                                      </Typography>
+                                    </Box>
+                                  </Paper>
+                                </Box>
+                              </ListItem>
+                            ) : (
+                              <ListItem
+                                sx={{ flexDirection: "row-reverse", mb: 2 }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    width: "80%",
+                                    flexDirection: "row-reverse",
+                                  }}
+                                >
+                                  <ListItemAvatar
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: "row-reverse",
+                                    }}
+                                  >
+                                    <Avatar alt="Remy Sharp" src={data[6]} />
+                                  </ListItemAvatar>
+                                  <Paper
+                                    sx={{
+                                      width: "100%",
+                                      p: 1.5,
+                                      bgcolor: "#ccc",
+                                    }}
+                                  >
+                                    <ListItemText
+                                      sx={{ m: 0 }}
+                                      primary={`${data[1]} ${data[2]}`}
+                                      secondary={
+                                        <Typography variant="caption">
+                                          {data[10]}
+                                        </Typography>
+                                      }
+                                    />
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        mt: 1,
+                                      }}
+                                    >
+                                      <Typography variant="body2">
+                                        {new Date(
+                                          data[11]
+                                        ).toLocaleTimeString()}
+                                      </Typography>
+                                    </Box>
+                                  </Paper>
+                                </Box>
+                              </ListItem>
+                            )}
+                          </List>
+                        </Box>
+                      );
+                    }
+                  )}
+              </Container>
+              {/*----------------------------- FOOTER COMPONENT---------------------------------------- */}
+              <Box
+                sx={{
+                  width: { xs: "100%", md: "63%" },
+                  bottom: 0,
+                  padding: "10px",
+                  backgroundColor: "white",
+                  position: "fixed",
+                  zIndex: 1000,
+                }}
+              >
+                <Grid container spacing={1} alignItems="center">
+                  <Grid item xs={1}></Grid>
+                  <Grid item xs={9}>
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      placeholder="Type a message"
+                      size="small"
+                      onChange={(e) => setMessage(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={1}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      onClick={SendMessage}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                </Grid>
               </Box>
-            </Paper>
-          </Box>
-        </ListItem>
-        <ListItem sx={{ flexDirection: "row-reverse", mb: 2 }}>
-          <Box
-            sx={{ display: "flex", width: "80%", flexDirection: "row-reverse" }}
-          >
-            <ListItemAvatar
-              sx={{ display: "flex", flexDirection: "row-reverse" }}
-            >
-              <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
-            </ListItemAvatar>
-            <Paper
+            </Container>
+          ) : (
+            <Container
+              maxWidth="xs"
               sx={{
-                width: "100%",
-                p: 1.5,
-                bgcolor: "#ccc",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh",
               }}
             >
-              <ListItemText
-                sx={{ m: 0 }}
-                primary="Vikas Kumar"
-                secondary={
-                  <Typography variant="caption">
-                    Lorem Ipsum is simply dummy text of the printing and
-                    typesetting industry. Lorem Ipsum has been the industry's
-                    standard dummy text ever since the 1500s, when
+              <Paper elevation={8} sx={{ borderRadius: "10px" }}>
+                <Box
+                  height="60vh"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Typography padding={3} variant="h6" textAlign="center">
+                    Hi,Buddy Welcome to Groups Page Please Click on Group
                   </Typography>
-                }
-              />
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mt: 1,
-                }}
-              >
-                <Typography variant="body2">12.20 PM</Typography>
-               
-              </Box>
-            </Paper>
-          </Box>
-        </ListItem>
-        <ListItem sx={{ mb: 8 }}>
-          <Box sx={{ display: "flex", width: "80%" }}>
-            <ListItemAvatar>
-              <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" />
-            </ListItemAvatar>
-            <Paper sx={{ width: "100%", p: 1.5 }}>
-              <ListItemText
-                sx={{ m: 0 }}
-                primary="Vikas Kumar"
-                secondary={
-                  <Typography variant="caption">
-                    Lorem Ipsum is simply dummy text of the printing and
-                    typesetting industry. Lorem Ipsum has been the industry's
-                    standard dummy text ever since the 1500s, when
-                  </Typography>
-                }
-              />
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mt: 1,
-                  
-                }}
-              >
-                <Typography variant="body2">12.20 PM</Typography>
-                <Box>
-                  <IconButton size="small">
-                    <ReplyIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" color="error">
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
                 </Box>
-              </Box>
-            </Paper>
-          </Box>
-        </ListItem> 
-      </List>
-    </Box>
-    {/*----------------------------- FOOTER COMPONENT---------------------------------------- */}
-    <Box sx={{ width:{xs:'100%',md:"63%"} , bottom: 0, padding: '10px', backgroundColor: 'white',position:"fixed" }}>
-    
-            <Grid container spacing={1} alignItems="center" >
-            <Grid item xs={1} >
-             
-              </Grid>
-              <Grid item xs={9}>
-                <TextField fullWidth variant="outlined" placeholder="Type a message" size="small" />
-               
-              </Grid>
-              <Grid item xs={1}>
-                <Button variant="contained" color="primary" fullWidth>Send</Button>
-              </Grid>
-            </Grid>
-</Box>
+              </Paper>
+            </Container>
+          )}
         </Grid>
       </Grid>
 
@@ -411,4 +477,3 @@ const addmembertogroup = Boolean(anchorElement);
 }
 
 export default Groups;
-
