@@ -12,7 +12,9 @@ import { OnlineUsers, io } from "../index";
 const router = express();
 router.use(bodyParser.json())
 module.exports = function (emitter: any, onlineusers: OnlineUsers) {
-  emitter.on("socketConnected", (socket: any) => {});
+  emitter.on("socketConnected", (socket: any) => {
+    
+  });
 
   // --------------------------------------------SIGNUP ROUTE---------------------------------------------------
   router.post("/Signup", async (req, res) => {
@@ -466,7 +468,7 @@ router.post("/add_message_to_group/:groupId",async(req,res)=>{
      VALUES(:groupId,:senderId,:message,SYSTIMESTAMP)`,{groupId,senderId,message});
      await connection.commit();
      await connection.close();
-     return res.status(200).send('Message Sended to Group')
+return res.status(200).send('Message Sended to Group');
   }catch(error){ 
     return res.status(500).send({error:(error as Error).message})
   }

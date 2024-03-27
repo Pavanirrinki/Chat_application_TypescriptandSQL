@@ -15,13 +15,18 @@ import { allgroupsofuserprops } from './Groups';
 
 
 export function AlignItemsList({allgroupsofuser,setGroupId}:{allgroupsofuser:allgroupsofuserprops[] | null,setGroupId:(id:number)=>void}) {
+    const FetchGroupData =(e:React.MouseEvent<HTMLLIElement, MouseEvent>,groupId:number) =>{
+        e.preventDefault();
+        setGroupId(groupId);
+        
+    }
     
   return (
     
     <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper',marginTop:"60px",maxHeight: '100vh', overflowY: 'auto',cursor:"pointer"}}>
 {(allgroupsofuser !== null) && allgroupsofuser.map((userdata, index) => (
     <React.Fragment key={index}>
-        <ListItem alignItems="flex-start" onClick={()=>setGroupId(userdata?.groupId)}>
+        <ListItem alignItems="flex-start" onClick={(e)=>FetchGroupData(e,userdata?.groupId)}>
             <ListItemAvatar>
                 <Avatar alt="Remy Sharp" src={userdata?.profile_pic ? userdata?.profile_pic.toString() : ''}/>
             </ListItemAvatar>

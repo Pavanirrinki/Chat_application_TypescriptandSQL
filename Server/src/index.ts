@@ -46,6 +46,20 @@ io.on('connection', (socket) => {
     if (typeof socket.handshake.query.userId === 'string' && socket.handshake.query.userId !== "undefined") {
         onlineusers[socket.handshake.query.userId] = socket.id;
     }
+    
+
+socket.on("join Room",(data)=>{
+    socket.join(data);
+    console.log("datagroupId",data)
+})
+
+socket.on("groupmessage",(msg)=>{
+    console.log("chat messag",msg)
+    io.to(msg.groupId).emit('chat message', msg.message);
+});
+
+
+
 
     console.log(onlineusers, 'pol');
     io.emit("custom_socket", { message: onlineusers });

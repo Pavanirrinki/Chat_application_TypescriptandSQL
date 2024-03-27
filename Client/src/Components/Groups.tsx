@@ -1,5 +1,5 @@
 import { Box,Button,CardHeader,Container,Grid,IconButton,InputBase,ListItem,Menu,MenuItem,Paper,TextField,Typography,Avatar, Card, Chip, List, ListItemAvatar,ListItemText,Stack} from"@mui/material";
-import React, { useEffect } from "react";
+import React, { useEffect,useContext } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import Dialog from "@mui/material/Dialog";
@@ -13,6 +13,7 @@ import { AlignItemsList } from "./ListItems";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {useNavigate } from "react-router-dom";
+import { ChatContext } from './Context';
 export interface allgroupsofuserprops {
   created_by: string;
   groupId: number;
@@ -22,20 +23,19 @@ export interface allgroupsofuserprops {
 function Groups() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(
-    null
-  );
+  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(null);
   const [opened, setOpened] = React.useState<boolean>(false);
   const [groupname, setGroupname] = React.useState<string>("");
-  const [allgroupsofuser, setAllgroupsofuser] = React.useState<
-    allgroupsofuserprops[] | null
-  >(null);
+  const [allgroupsofuser, setAllgroupsofuser] = React.useState<allgroupsofuserprops[] | null>(null);
   const [groupmessageswithdata, setGroupmessageswithdata] =
     React.useState<any>(null);
   const [groupId, setGroupId] = React.useState<number | null>(null);
-  const [message, setMessage] = React.useState<string>("");
+  const [message, setMessage] = React.useState<string >('');
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
+
+  const { chatData, setChatData,socket,setSocket } = useContext(ChatContext);
+
 
   const addmembertogroup = Boolean(anchorElement);
   const handleClicked = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -73,12 +73,30 @@ function Groups() {
       });
   }, []);
 
+useEffect(()=>{
+  socket.on("chat message",(data:any)=>{
+    axios
+    .get(API + `group_data/${groupId}`)
+    .then((data) => {
+      console.log(data.data, "creative thinking");
+      setGroupmessageswithdata(data.data);
+      socket.emit("join Room",groupId);
+    })
+    .catch((error) => {
+      console.log(error.message);
+    });
+    console.log('chatted,',data);
+  });
+},[socket]);
+
+
   useEffect(() => {
     axios
       .get(API + `group_data/${groupId}`)
       .then((data) => {
         console.log(data.data, "creative thinking");
         setGroupmessageswithdata(data.data);
+        socket.emit("join Room",groupId);
       })
       .catch((error) => {
         console.log(error.message);
@@ -108,21 +126,34 @@ function Groups() {
       });
     handleClosed();
   };
-  const SendMessage = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const SendMessageforgroups = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    axios
-      .post(API + `add_message_to_group/${groupId}`, {
-        senderId: parsed_data?.sendeddata?.userId,
-        message,
-      })
-      .then((data) => {
-        console.log(data.data);
-        setMessage(" ");
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
-  };
+    
+    await axios
+        .post(API + `add_message_to_group/${groupId}`, {
+            senderId: parsed_data?.sendeddata?.userId,
+            message,
+        })
+        .then((data) => {
+          socket.emit("groupmessage",{message,groupId});
+          
+          setMessage('');
+          console.log("Message cleared successfully");
+          console.log("Message state after clearing:", message);
+
+          console.log(data);
+        })
+        .catch((error) => {
+            console.log("Error occurred:", error.message);
+        });
+       
+};
+const MessageSent =(e:React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>{
+     setMessage(e.target.value);
+     
+}
+console.log(socket.on,"soiloftheday");
+
   console.log("groupId", groupmessageswithdata, "groupId");
   return (
     <Container>
@@ -256,7 +287,7 @@ function Groups() {
                 {groupmessageswithdata?.groupMessages &&
                   groupmessageswithdata?.groupMessages.map(
                     (data: string[], index: any) => {
-                      console.log(data, "chalo ji");
+                  
 
                       return (
                         <Box
@@ -395,7 +426,8 @@ function Groups() {
                       variant="outlined"
                       placeholder="Type a message"
                       size="small"
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={(e) =>MessageSent(e)}
+                      value={message}
                     />
                   </Grid>
                   <Grid item xs={1}>
@@ -403,7 +435,7 @@ function Groups() {
                       variant="contained"
                       color="primary"
                       fullWidth
-                      onClick={SendMessage}
+                      onClick={(e)=>SendMessageforgroups(e)}
                     >
                       Send
                     </Button>

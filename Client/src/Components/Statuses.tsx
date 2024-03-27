@@ -56,8 +56,10 @@ function Statuses() {
   const [progress, setProgress] = React.useState(0);
   const [statusCount, setStatusCount] = React.useState(0);
   const [statusindexcount, setStatusindexcount] = React.useState(0);
-  const [statusData, setStatusData] = React.useState<statusDataprops[] | null>(null );
-  const [open,setOpen] = React.useState<boolean>(false);
+  const [statusData, setStatusData] = React.useState<statusDataprops[] | null>(
+    null
+  );
+  const [open, setOpen] = React.useState<boolean>(false);
   const [particular_user_status, setParticular_user_status] =
     React.useState<particular_user_status_props | null>(null);
   const [profiles, setProfiles] = React.useState<String[] | null>(null);
@@ -214,31 +216,28 @@ function Statuses() {
               );
             })}
         </Grid>
-        {(statusData && !open) ? (
+        {statusData && !open ? (
           <Grid
             item
             xs={5}
             sx={{ backgroundColor: "black", height: "100vh", width: "600px" }}
           >
             <IconButton
-           onClick={()=>setOpen(true)}
-      sx={{ position: 'absolute', top: 0, right: 0,color:"black" }}
-    >
-      <CloseOutlined />
-    </IconButton>
-            
+              onClick={() => setOpen(true)}
+              sx={{ position: "absolute", top: 0, right: 0, color: "black" }}
+            >
+              <CloseOutlined />
+            </IconButton>
+
             <Grid container>
               {statusData &&
                 statusData.map((data, index) => (
                   <Grid item xs={12 / statusData.length} key={index}>
                     <LinearProgressWithLabel
                       value={index === statusCount ? progress : 0}
-                      
                     />
-                   </Grid>
-                   
+                  </Grid>
                 ))}
-                
             </Grid>
             <Box
               sx={{
@@ -276,7 +275,7 @@ function Statuses() {
               <ArrowBackIosNewIcon
                 sx={{ color: "white", fontSize: "50px", fontWeight: "bold" }}
               />
-              {(statusData) &&
+              {statusData &&
                 statusData.map((data, index) => {
                   return (
                     <React.Fragment key={index}>
@@ -313,7 +312,7 @@ function Statuses() {
                               src={data.status}
                               style={{
                                 marginTop: "0px",
-                                height: "78vh",
+                                height: "70vh",
                                 width: "90%",
                               }}
                               alt="Status Image"
@@ -324,6 +323,8 @@ function Statuses() {
                               variant="outlined"
                               fullWidth
                               onChange={(e) => setReplyText(e.target.value)}
+                              value={replyText}
+                             
                               InputProps={{
                                 endAdornment: (
                                   <InputAdornment position="end">

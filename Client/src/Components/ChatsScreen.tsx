@@ -77,7 +77,7 @@ then((data)=>{setChatting(data);
   const sendMessage = (e: React.MouseEvent<HTMLButtonElement>) => {
      e.preventDefault();
      
-     const senderId = parsed_data?.sendeddata?.userId;
+   
      const socket = io('http://localhost:5001/');
      SendMessageApi("sendmessage",parsed_data?.sendeddata?.userId,receiverId,Inputmessage)
      .then((data)=>{setInputmessage("");setLoaddata(true);socket.emit("Typingstopped",receiverId);
