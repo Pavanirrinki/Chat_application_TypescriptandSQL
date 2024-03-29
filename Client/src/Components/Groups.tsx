@@ -35,6 +35,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Await, useNavigate } from "react-router-dom";
 import { ChatContext } from "./Context";
+import SimpleDialogDemo from "../MuiComponents/DialoBox";
 export interface allgroupsofuserprops {
   created_by: string;
   groupId: number;
@@ -311,20 +312,16 @@ function Groups() {
                     groupmessageswithdata &&
                     groupmessageswithdata?.groupData[0][1]
                   }
+
                   subheader={
-                    <Chip
-                      label={`${
-                        groupmessageswithdata && groupmessageswithdata?.count[0]
-                      } ${
-                        groupmessageswithdata?.count[0] == 1
-                          ? "Member"
-                          : "Members"
-                      }`}
-                      color="success"
-                      clickable
-                    />
+                    <SimpleDialogDemo memberscount={groupmessageswithdata?.count[0]} groupId={groupId}/>
                   }
+                    
+            
+                      
+                    
                 />
+               
               </Card>
 
               {/* -------------------------------GROUP CHATTING MEMU ICON----------------------------------------- */}

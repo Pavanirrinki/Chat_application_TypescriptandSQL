@@ -107,6 +107,7 @@ function ChatsScreen({
               boxShadow: "rgba(0, 0, 0, 0.2) 0px 18px 50px -10px",
               "&:hover": {
                 backgroundColor: "white", 
+                
               },
              
             }}
@@ -137,7 +138,7 @@ function ChatsScreen({
               />
             </Box>
           </ListItemButton>
-<Box sx={{backgroundColor:"#f2f2f2",marginLeft:"10px"}}>
+<Box sx={{backgroundColor:"#f2f2f2",marginLeft:"10px",minHeight:"100vh"}}>
           <Grid
             container
             sx={{

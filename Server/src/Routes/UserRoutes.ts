@@ -478,8 +478,9 @@ router.get('/profiles_display_not_present_in_group/:groupId',async(req,res)=>{
   try{
      const {groupId} = req.params;
      const connection = await connectToDatabase();
-     const users_not_their_in_group = await connection.execute(`select users_data.ID from users_data left join users_in_groups 
+     const users_not_their_in_group = await connection.execute(`select * from users_data left join users_in_groups 
      on users_data.ID = users_in_groups.USERID WHERE users_in_groups.ID =:groupId`,{groupId});
+     connection.close();
      return res.status(200).send(users_not_their_in_group.rows);
   }catch(error){ 
     return res.status(500).send({error : (error as Error).message})

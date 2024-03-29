@@ -115,7 +115,7 @@ const Profiles = ({
          }}
       >
    
-         <Paper  sx={{borderRadius:"10px"}}>
+       
         {searchProfile123
           ? searchProfile123
               .filter((data) => data[0] !== parsed_data?.sendeddata?.userId)
@@ -186,7 +186,7 @@ const Profiles = ({
                   </ListItemButton>
                 );
               })}
-              </Paper>
+             
       </Box>
      
     </Box>
