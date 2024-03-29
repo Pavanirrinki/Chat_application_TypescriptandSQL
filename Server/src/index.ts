@@ -48,14 +48,13 @@ io.on('connection', (socket) => {
     }
     
 
-socket.on("join Room",(data)=>{
-    socket.join(data);
-    console.log("datagroupId",data)
-})
+    socket.on("join Room", (data: any) => {
+        socket.join(data); // Join the room corresponding to the group
+      });
 
 socket.on("groupmessage",(msg)=>{
     console.log("chat messag",msg)
-    io.to(msg.groupId).emit('chat message', msg.message);
+    io.to(msg.groupId).emit('chat message', {message:msg.message,groupID:msg.groupId});
 });
 
 
@@ -79,6 +78,7 @@ socket.on("groupmessage",(msg)=>{
 
     socket.on('disconnect', () => {
         console.log('A user disconnected');
+       
 
         for (const userId in onlineusers) {
             if (Object.prototype.hasOwnProperty.call(onlineusers, userId) && onlineusers[userId] === socket.id) {

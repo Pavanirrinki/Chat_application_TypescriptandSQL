@@ -23,6 +23,7 @@ function Mainscreen(){
  return( 
     <Grid container>
       <Grid item xs={12} md={3}>
+        
         <Profiles receiverId={receiverId} setReceiverId={setReceiverId} 
         profileName={profileName} setProfileName={setProfileName} profile_pic={profile_pic} setProfile_pic={setProfile_pic} 
        />
@@ -37,7 +38,10 @@ function Mainscreen(){
 
 function App() {
   const { chatData, setChatData,socket,setSocket } = useContext(ChatContext);
-  const socketed = io('http://localhost:5001/')
+  const user_data = localStorage.getItem("Chat_user_details");
+  const parsed_data = user_data && JSON.parse(user_data);
+
+  // const socketed = io('http://localhost:5001/')
   const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false);
   useEffect(() => {
    
@@ -50,8 +54,15 @@ function App() {
     }
   }, [isLoggedIn]);
  
+  useEffect(()=>{
+    const socket = io("http://localhost:5001/", {
+      query: {
+        userId: parsed_data?.sendeddata?.userId,
+      },
+    });
+  },[])
 console.log("socketed",socket);
-console.log("socketed123",socketed);
+// console.log("socketed123",socketed);
   return (
 <BrowserRouter>
 <Routes>

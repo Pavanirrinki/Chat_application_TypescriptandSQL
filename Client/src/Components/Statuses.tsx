@@ -232,7 +232,7 @@ function Statuses() {
             <Grid container>
               {statusData &&
                 statusData.map((data, index) => (
-                  <Grid item xs={12 / statusData.length} key={index}>
+                  <Grid item xs={12 / statusData.length} key={index} >
                     <LinearProgressWithLabel
                       value={index === statusCount ? progress : 0}
                     />
@@ -249,14 +249,14 @@ function Statuses() {
               <Avatar
                 alt="Remy Sharp"
                 src={particular_user_status?.profile_pic}
-                sx={{ width: 56, height: 56, margin: "10px 10px 0px 10px" }}
+                sx={{ width: 30, height: 30, margin: "10px 10px 0px 10px" }}
               />
               <Stack>
                 <Typography
                   sx={{
                     color: "white",
-                    marginLeft: "20px",
-                    fontSize: "20px",
+                    
+                    fontSize: "15px",
                     fontWeight: "bold",
                   }}
                 >
@@ -312,7 +312,7 @@ function Statuses() {
                               src={data.status}
                               style={{
                                 marginTop: "0px",
-                                height: "70vh",
+                                height: "73vh",
                                 width: "90%",
                               }}
                               alt="Status Image"
@@ -324,7 +324,7 @@ function Statuses() {
                               fullWidth
                               onChange={(e) => setReplyText(e.target.value)}
                               value={replyText}
-                             
+                            
                               InputProps={{
                                 endAdornment: (
                                   <InputAdornment position="end">
@@ -333,7 +333,7 @@ function Statuses() {
                                         cursor: "pointer",
                                         color: "white",
                                         marginRight: "20px",
-                                        fontSize: "30px",
+                                        fontSize: "20px",
                                       }}
                                       onClick={(e) =>
                                         sendReply(
@@ -365,6 +365,7 @@ function Statuses() {
                                   padding: "0px",
                                   borderRadius: "20px",
                                   color: "whitesmoke",
+                                  height:"30px"
                                 },
                               }}
                             />

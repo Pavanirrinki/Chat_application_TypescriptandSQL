@@ -1,5 +1,26 @@
-import { Box,Button,CardHeader,Container,Grid,IconButton,InputBase,ListItem,Menu,MenuItem,Paper,TextField,Typography,Avatar, Card, Chip, List, ListItemAvatar,ListItemText,Stack} from"@mui/material";
-import React, { useEffect,useContext } from "react";
+import {
+  Box,
+  Button,
+  CardHeader,
+  Container,
+  Grid,
+  IconButton,
+  InputBase,
+  ListItem,
+  Menu,
+  MenuItem,
+  Paper,
+  TextField,
+  Typography,
+  Avatar,
+  Card,
+  Chip,
+  List,
+  ListItemAvatar,
+  ListItemText,
+  Stack,
+} from "@mui/material";
+import React, { useEffect, useContext } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import Dialog from "@mui/material/Dialog";
@@ -12,31 +33,66 @@ import { API } from "./Api";
 import { AlignItemsList } from "./ListItems";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import {useNavigate } from "react-router-dom";
-import { ChatContext } from './Context';
+import { Await, useNavigate } from "react-router-dom";
+import { ChatContext } from "./Context";
 export interface allgroupsofuserprops {
   created_by: string;
   groupId: number;
   groupName: string;
   profile_pic: null | string;
 }
+
 function Groups() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(null);
+  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(
+    null
+  );
   const [opened, setOpened] = React.useState<boolean>(false);
   const [groupname, setGroupname] = React.useState<string>("");
-  const [allgroupsofuser, setAllgroupsofuser] = React.useState<allgroupsofuserprops[] | null>(null);
+  const [allgroupsofuser, setAllgroupsofuser] = React.useState<
+    allgroupsofuserprops[] | null
+  >(null);
   const [groupmessageswithdata, setGroupmessageswithdata] =
     React.useState<any>(null);
   const [groupId, setGroupId] = React.useState<number | null>(null);
-  const [message, setMessage] = React.useState<string >('');
+  const [message, setMessage] = React.useState<string>("");
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
 
-  const { chatData, setChatData,socket,setSocket } = useContext(ChatContext);
+  const { chatData, setChatData, socket, setSocket } = useContext(ChatContext);
+
+  function formatDate(dateString: string | number | Date) {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const monthIndex = date.getMonth();
+    const year = date.getFullYear();
+    let hour = date.getHours();
+    const minute = ("0" + date.getMinutes()).slice(-2);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12;
+    hour = hour ? hour : 12; // Handle midnight
+    const formattedDate = `${day} ${months[monthIndex]} ${year} ${hour}:${minute} ${ampm}`;
+    return formattedDate;
+  }
 
 
+
+  console.log(groupId,"pora ----")
   const addmembertogroup = Boolean(anchorElement);
   const handleClicked = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElement(event.currentTarget);
@@ -73,35 +129,41 @@ function Groups() {
       });
   }, []);
 
-useEffect(()=>{
-  socket.on("chat message",(data:any)=>{
-    axios
-    .get(API + `group_data/${groupId}`)
-    .then((data) => {
-      console.log(data.data, "creative thinking");
-      setGroupmessageswithdata(data.data);
-      socket.emit("join Room",groupId);
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
-    console.log('chatted,',data);
-  });
-},[socket]);
-
+  useEffect(() => {
+    const handleChatMessage = async (msg: { message: string, groupID: number }) => {
+      console.log(groupId === msg.groupID, 'po000000', groupId, msg.groupID);
+      try {
+        if (groupId === msg.groupID) {
+          const response = await axios.get(API + `group_data/${msg.groupID}`);
+          setGroupmessageswithdata(response.data); // Update the messages for the group
+        }
+      } catch (error) {
+        console.log((error as Error).message);
+      }
+    };
+  
+    socket.on("chat message", handleChatMessage); // Listen for incoming messages
+  
+    return () => {
+      socket.off("chat message", handleChatMessage);
+    };
+  }, [socket, groupId]);
+  
+  
 
   useEffect(() => {
     axios
       .get(API + `group_data/${groupId}`)
       .then((data) => {
-        console.log(data.data, "creative thinking");
-        setGroupmessageswithdata(data.data);
-        socket.emit("join Room",groupId);
+        setGroupmessageswithdata(data.data); 
       })
       .catch((error) => {
         console.log(error.message);
       });
   }, [groupId]);
+
+
+
   const handlesubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     axios
@@ -128,31 +190,27 @@ useEffect(()=>{
   };
   const SendMessageforgroups = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
+  
     await axios
-        .post(API + `add_message_to_group/${groupId}`, {
-            senderId: parsed_data?.sendeddata?.userId,
-            message,
-        })
-        .then((data) => {
-          socket.emit("groupmessage",{message,groupId});
-          
-          setMessage('');
-          console.log("Message cleared successfully");
-          console.log("Message state after clearing:", message);
-
-          console.log(data);
-        })
-        .catch((error) => {
-            console.log("Error occurred:", error.message);
-        });
-       
-};
-const MessageSent =(e:React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>{
-     setMessage(e.target.value);
-     
-}
-console.log(socket.on,"soiloftheday");
+      .post(API + `add_message_to_group/${groupId}`, {
+        senderId: parsed_data?.sendeddata?.userId,
+        message,
+      })
+      .then((data) => {
+        socket.emit("groupmessage", { message, groupId }); // Emit the message to the group
+        setMessage(""); // Clear the message input field
+        console.log("Message sent successfully");
+      })
+      .catch((error) => {
+        console.log("Error occurred:", error.message);
+      });
+  };
+  const MessageSent = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setMessage(e.target.value);
+  };
+  console.log(socket.on, "soiloftheday");
 
   console.log("groupId", groupmessageswithdata, "groupId");
   return (
@@ -191,6 +249,7 @@ console.log(socket.on,"soiloftheday");
               >
                 <MenuItem onClick={handleClickOpen}>Add Group</MenuItem>
                 <MenuItem>Favourites</MenuItem>
+                <MenuItem onClick={()=>navigate("/")}>Chats</MenuItem>
               </Menu>
             </div>
             <InputBase
@@ -287,8 +346,6 @@ console.log(socket.on,"soiloftheday");
                 {groupmessageswithdata?.groupMessages &&
                   groupmessageswithdata?.groupMessages.map(
                     (data: string[], index: any) => {
-                  
-
                       return (
                         <Box
                           sx={{
@@ -297,21 +354,6 @@ console.log(socket.on,"soiloftheday");
                             background: "#f9f9f9",
                           }}
                         >
-                          <Stack
-                            direction="row"
-                            justifyContent="center"
-                            sx={{
-                              py: 2,
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                              background: "#f9f9f9",
-                            }}
-                          >
-                            <Chip
-                              label={new Date(data[11]).toLocaleDateString()}
-                            />
-                          </Stack>
                           <List sx={{ p: 0, overflowY: "auto", flex: "1 0 0" }}>
                             {/* ----------------------------------others send messages-------------------------------------------------------------------------    */}
                             {parsed_data?.sendeddata?.userId.toString() !==
@@ -323,15 +365,19 @@ console.log(socket.on,"soiloftheday");
                                   </ListItemAvatar>
                                   <Paper sx={{ width: "100%", p: 1.5 }}>
                                     <ListItemText
-                                      sx={{ m: 0 }}
-                                      primary={`${data[1]} ${data[2]}`}
+                                      sx={{ m: 0,display:"flex",flexDirection:"column"}}
+                                      primary={ 
+                                      <Typography variant="caption" sx={{opacity:0.7}}>
+                                      {`${data[1]} ${data[2]}`}
+                                    </Typography>
+                                    }
                                       secondary={
-                                        <Typography variant="caption">
+                                        <Typography variant="caption" sx={{fontWeight:"600"}}>
                                           {data[10]}
                                         </Typography>
                                       }
                                     />
-                                    <Box
+                                     <Box
                                       sx={{
                                         display: "flex",
                                         alignItems: "center",
@@ -339,10 +385,8 @@ console.log(socket.on,"soiloftheday");
                                         mt: 1,
                                       }}
                                     >
-                                      <Typography variant="body2">
-                                        {new Date(
-                                          data[11]
-                                        ).toLocaleTimeString()}
+                                       <Typography variant="body2" sx={{fontSize:"12px",opacity:0.7}}>
+                                        {formatDate(data[11])}
                                       </Typography>
                                     </Box>
                                   </Paper>
@@ -375,10 +419,14 @@ console.log(socket.on,"soiloftheday");
                                     }}
                                   >
                                     <ListItemText
-                                      sx={{ m: 0 }}
-                                      primary={`${data[1]} ${data[2]}`}
+                                      sx={{ m: 0,display:"flex",flexDirection:"column"}}
+                                      primary={ 
+                                      <Typography variant="caption" sx={{opacity:0.7}}>
+                                      {`${data[1]} ${data[2]}`}
+                                    </Typography>
+                                    }
                                       secondary={
-                                        <Typography variant="caption">
+                                        <Typography variant="caption" sx={{fontWeight:"600"}}>
                                           {data[10]}
                                         </Typography>
                                       }
@@ -391,10 +439,8 @@ console.log(socket.on,"soiloftheday");
                                         mt: 1,
                                       }}
                                     >
-                                      <Typography variant="body2">
-                                        {new Date(
-                                          data[11]
-                                        ).toLocaleTimeString()}
+                                      <Typography variant="body2" sx={{fontSize:"12px",opacity:0.7}}>
+                                        {formatDate(data[11])}
                                       </Typography>
                                     </Box>
                                   </Paper>
@@ -426,7 +472,7 @@ console.log(socket.on,"soiloftheday");
                       variant="outlined"
                       placeholder="Type a message"
                       size="small"
-                      onChange={(e) =>MessageSent(e)}
+                      onChange={(e) => MessageSent(e)}
                       value={message}
                     />
                   </Grid>
@@ -435,7 +481,7 @@ console.log(socket.on,"soiloftheday");
                       variant="contained"
                       color="primary"
                       fullWidth
-                      onClick={(e)=>SendMessageforgroups(e)}
+                      onClick={(e) => SendMessageforgroups(e)}
                     >
                       Send
                     </Button>

@@ -485,5 +485,7 @@ router.get('/profiles_display_not_present_in_group/:groupId',async(req,res)=>{
     return res.status(500).send({error : (error as Error).message})
   }
 })
-  return router;
+//-----------------------------------------------ADD TO FAVOURITE--------------------------------------
+
+return router;
 };

@@ -7,7 +7,8 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import { allgroupsofuserprops } from './Groups';
-
+import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import { ChatContext } from './Context';
 
 
 
@@ -15,8 +16,10 @@ import { allgroupsofuserprops } from './Groups';
 
 
 export function AlignItemsList({allgroupsofuser,setGroupId}:{allgroupsofuser:allgroupsofuserprops[] | null,setGroupId:(id:number)=>void}) {
-    const FetchGroupData =(e:React.MouseEvent<HTMLLIElement, MouseEvent>,groupId:number) =>{
+    const { chatData, setChatData, socket, setSocket } = React.useContext(ChatContext);
+    const FetchGroupData =async (e:React.MouseEvent<HTMLLIElement, MouseEvent>,groupId:number) =>{
         e.preventDefault();
+       await socket.emit("join Room", groupId); 
         setGroupId(groupId);
         
     }
@@ -30,6 +33,7 @@ export function AlignItemsList({allgroupsofuser,setGroupId}:{allgroupsofuser:all
             <ListItemAvatar>
                 <Avatar alt="Remy Sharp" src={userdata?.profile_pic ? userdata?.profile_pic.toString() : ''}/>
             </ListItemAvatar>
+            
             <ListItemText
                 primary={`${userdata?.groupName}`}
                 secondary={
@@ -43,9 +47,13 @@ export function AlignItemsList({allgroupsofuser,setGroupId}:{allgroupsofuser:all
                             Ali Connors
                         </Typography>
                         {" — I'll be in your neighborhood doing errands this…"}
+                       
                     </React.Fragment>
                 } 
             />
+     <ListItemAvatar>
+<StarOutlineIcon sx={{opacity:0.5}} onClick={(e)=>e.stopPropagation()}/>
+            </ListItemAvatar>
         </ListItem>
         <Divider variant="inset" component="li" />
     </React.Fragment>
