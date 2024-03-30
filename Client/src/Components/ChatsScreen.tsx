@@ -42,7 +42,11 @@ function ChatsScreen({
   const fileExtensionsRegex = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i;
   const videoExtensionsRegex = /\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i;
   useEffect(() => {
-    const socket = io("http://localhost:5001/");
+    const socket = io('http://localhost:5001/',{
+  query:{
+    userId:parsed_data?.sendeddata?.userId
+  }
+});
 
     socket.on("message", (data123: string[]) => {
       console.log(data123, "daata123");

@@ -12,6 +12,7 @@ import { io } from 'socket.io-client';
 import Statuses from './Components/Statuses';
 import Groups from './Components/Groups';
 import CheckboxListSecondary from './Components/Allprofiles';
+import FavouriteGroups from './Components/FavouriteGroups';
 
 function Mainscreen(){
  const [receiverId,setReceiverId] = useState<string>('');
@@ -72,6 +73,7 @@ console.log("socketed",socket);
         <Route path="/statuses" element={<Statuses />} />
         <Route path="/groups" element={<Groups />} />
        <Route path ="/all_profiles/:groupId" element={<CheckboxListSecondary />} />
+       <Route path ="/favourite_groups"  element={<FavouriteGroups />}/>
         <Route path ='*'  element={<NotFound />} />
 
       </Routes>

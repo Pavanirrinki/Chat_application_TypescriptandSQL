@@ -249,7 +249,7 @@ function Groups() {
                 }}
               >
                 <MenuItem onClick={handleClickOpen}>Add Group</MenuItem>
-                <MenuItem>Favourites</MenuItem>
+                <MenuItem onClick={()=>navigate("/favourite_groups")}>Favourites</MenuItem>
                 <MenuItem onClick={()=>navigate("/")}>Chats</MenuItem>
               </Menu>
             </div>

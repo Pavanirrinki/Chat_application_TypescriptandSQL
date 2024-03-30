@@ -6,20 +6,16 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import bodyParser from "body-parser";
 import Middleware from "../MiddleWare/Middleware";
-import fs from "fs";
 import { OnlineUsers, io } from "../index";
 
 const router = express();
-router.use(bodyParser.json())
+router.use(bodyParser.json());
 module.exports = function (emitter: any, onlineusers: OnlineUsers) {
-  emitter.on("socketConnected", (socket: any) => {
-    
-  });
+  emitter.on("socketConnected", (socket: any) => {});
 
   // --------------------------------------------SIGNUP ROUTE---------------------------------------------------
   router.post("/Signup", async (req, res) => {
-    const { first_name, last_name, email, mobile, passwords} =
-      req.body;
+    const { first_name, last_name, email, mobile, passwords } = req.body;
 
     try {
       const connection = await connectToDatabase();
@@ -125,9 +121,11 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
   });
 
   //-------------------------------------------SEND MESSAGE---------------------------------------------------------------
-  router.post("/sendmessage",async (req: express.Request, res: express.Response) => {
+  router.post(
+    "/sendmessage",
+    async (req: express.Request, res: express.Response) => {
       const { SenderId, message, ReceiverId, statusId, status } = req.body;
-       console.log(onlineusers, "receiverid");
+      console.log(onlineusers, "receiverid");
       try {
         console.log(onlineusers[ReceiverId], "receiverid");
         const uid = await new ShortUniqueId({
@@ -167,16 +165,15 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
           );
         }
         if (onlineusers[ReceiverId]) {
-       
-        io.to(onlineusers[ReceiverId]).emit("message",{
+           io.to(onlineusers[ReceiverId]).emit("message", {
             message_id: uuid,
             sender_id: SenderId,
             receiver_id: ReceiverId,
             message: message,
             created_at: SYS_DATE,
-            statusId:  null,
+            statusId: null,
             lob_data: null,
-        })
+          });
         }
 
         await connection.commit();
@@ -194,7 +191,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
   router.get("/allmessages/:senderId/:ReceiverId", async (req, res) => {
     try {
       const { senderId, ReceiverId } = req.params;
-     
+
       const connection = await connectToDatabase();
 
       const personal_chatting: any = await connection.execute(
@@ -261,10 +258,9 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
   //----------------------------------------------------ADD STATUS ROUTE---------------------------
 
   router.post("/add_status", async (req, res) => {
-  
     try {
       const { textData, user_id } = req.body;
-     
+
       const binaryData = Buffer.from(textData, "utf-8");
       const uid = await new ShortUniqueId({
         length: 5,
@@ -356,137 +352,218 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
     }
   });
 
-
   //-------------------------------CREATE GROUP---------------------------------------------------
-  router.post("/create_group",async(req,res)=>{
-    try{
-     const {groupname,created_by} =req.body;
-     const connection = connectToDatabase();
-     const uid = await new ShortUniqueId({
-      length: 6,
-      dictionary: "number",
-    });
-    const groupId = await uid.rnd();
-     const create_group = (await connection).execute(`INSERT INTO GROUPS_TABLE(GROUPID,GROUPNAME,CREATED_BY,CREATED_AT) VALUES 
-     (:groupId,:groupname,:created_by,SYSTIMESTAMP)`,{groupId,groupname,created_by});
-     const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,created_by});
-     (await connection).commit();
-     (await connection).close();
-     return res.status(200).send("SUCCESSFULLY CREATED GROUP");
-
-    }catch(error){
-      return res.status(500).send({error:(error as Error).message});
+  router.post("/create_group", async (req, res) => {
+    try {
+      const { groupname, created_by } = req.body;
+      const connection = connectToDatabase();
+      const uid = await new ShortUniqueId({
+        length: 6,
+        dictionary: "number",
+      });
+      const groupId = await uid.rnd();
+      const create_group = (await connection).execute(
+        `INSERT INTO GROUPS_TABLE(GROUPID,GROUPNAME,CREATED_BY,CREATED_AT) VALUES 
+     (:groupId,:groupname,:created_by,SYSTIMESTAMP)`,
+        { groupId, groupname, created_by }
+      );
+      const add_member_to_group = (await connection).execute(
+        `INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,
+        { groupId, created_by }
+      );
+      (await connection).commit();
+      (await connection).close();
+      return res.status(200).send("SUCCESSFULLY CREATED GROUP");
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
     }
-  })
+  });
   //-------------------------ALL GROUPS OF PARTICULAR USER------------------------------------------------------
   router.get("/all_groups_in_user/:userid", async (req, res) => {
     try {
-        const { userid } = req.params;
-        const connection = await connectToDatabase();
-        const result = await connection.execute(`
+      const { userid } = req.params;
+      const connection = await connectToDatabase();
+      const result = await connection.execute(
+        `
             SELECT *
             FROM GROUPS_TABLE t1
             INNER JOIN USERS_IN_GROUPS t2 ON t1.GROUPID = t2.ID
-            WHERE t2.USERID = :userid`, 
-            { userid }
-        );
-        await connection.close();
-        
-        if (result.rows && result.rows.length > 0) {
-            const response = result.rows.map((row:any) => ({
-                groupId: row[0], 
-                groupName: row[1], 
-                created_by: row[2],
-                profile_pic:row[4]
-            }));
-            return res.status(200).send(response);
-        }
+            WHERE t2.USERID = :userid`,
+        { userid }
+      );
+      await connection.close();
+
+      if (result.rows && result.rows.length > 0) {
+        const response = result.rows.map((row: any) => ({
+          groupId: row[0],
+          groupName: row[1],
+          created_by: row[2],
+          profile_pic: row[4],
+        }));
+        return res.status(200).send(response);
+      }
     } catch (error) {
-        return res.status(500).send({ error:(error as Error).message });
+      return res.status(500).send({ error: (error as Error).message });
     }
-});
-
-// -------------------------ALL USERS OF PARTICULAR GROUP--------------------------------------------------------
-router.get("/users_in_group/:groupId",async(req,res)=>{
-  const {groupId} = req.params;
-  try{
-const connection = await connectToDatabase();
-const result = await connection.execute(`SELECT * FROM USERS_IN_GROUPS WHERE ID = :groupId`,{groupId});
-await connection.close();
-return res.status(200).send(result.rows)
-  }catch(error){
-    return res.status(500).send({error:(error as Error).message})
-  }
-})
-
-//--------------------------------ADD PROFIILES TO GROUP-------------------------------------------
-router.post("/add_members_to_group/:groupId",async(req,res)=>{
-  try{
- const {profiles} = req.body;
- const {groupId} = req.params;
- const connection =await connectToDatabase();
-  profiles.map(async (data: any)=>{
-    console.log(groupId,data,"ffff");
-     const add_member_to_group =  (await connection).execute(`INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,{groupId,created_by: data});
-     await connection.commit();
-     await connection.close();
   });
- 
-  return res.status(200).send("Profiles Added To Group Successfully");
-}catch(error){
-  return res.status(500).send({error:(error as Error).message});
-}
-});
 
-//-----------------------------------GET GROUP DATA-----------------------------------------------
-router.get('/group_data/:groupId',async(req,res)=>{
-  try{
-    const {groupId} = req.params;
-     const connection = await connectToDatabase();
-     const group_data = await connection.execute(`SELECT *  FROM GROUPS_TABLE WHERE GROUPID=:groupId`,[groupId]);
-     const group_messages = await connection.execute(`SELECT * FROM users_data
+  // -------------------------ALL USERS OF PARTICULAR GROUP--------------------------------------------------------
+  router.get("/users_in_group/:groupId", async (req, res) => {
+    const { groupId } = req.params;
+    try {
+      const connection = await connectToDatabase();
+      const result = await connection.execute(
+        `SELECT * FROM USERS_IN_GROUPS WHERE ID = :groupId`,
+        { groupId }
+      );
+      await connection.close();
+      return res.status(200).send(result.rows);
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
+    }
+  });
+
+  //--------------------------------ADD PROFIILES TO GROUP-------------------------------------------
+  router.post("/add_members_to_group/:groupId", async (req, res) => {
+    try {
+      const { profiles } = req.body;
+      const { groupId } = req.params;
+      const connection = await connectToDatabase();
+      profiles.map(async (data: any) => {
+        console.log(groupId, data, "ffff");
+        const add_member_to_group = (await connection).execute(
+          `INSERT INTO USERS_IN_GROUPS(ID,USERID) VALUES(:groupId,:created_by)`,
+          { groupId, created_by: data }
+        );
+        await connection.commit();
+        await connection.close();
+      });
+
+      return res.status(200).send("Profiles Added To Group Successfully");
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
+    }
+  });
+
+  //-----------------------------------GET GROUP DATA-----------------------------------------------
+  router.get("/group_data/:groupId", async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const connection = await connectToDatabase();
+      const group_data = await connection.execute(
+        `SELECT *  FROM GROUPS_TABLE WHERE GROUPID=:groupId`,
+        [groupId]
+      );
+      const group_messages = await connection.execute(
+        `SELECT * FROM users_data
      INNER JOIN messeges_in_group_table ON users_data.ID = messeges_in_group_table.SENDERID where 
      messeges_in_group_table.GROUPID =:groupId ORDER BY messeges_in_group_table.CREATED_AT
-     `,[groupId]);
-     const count_of_users = await connection.execute (`SELECT COUNT(*) FROM USERS_IN_GROUPS WHERE ID=:groupId`,[groupId]);
+     `,
+        [groupId]
+      );
+      const count_of_users = await connection.execute(
+        `SELECT COUNT(*) FROM USERS_IN_GROUPS WHERE ID=:groupId`,
+        [groupId]
+      );
+      await connection.close();
+      return res
+        .status(200)
+        .send({
+          groupData: group_data.rows,
+          groupMessages: group_messages.rows,
+          count: count_of_users.rows,
+        });
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
+    }
+  });
+
+  //----------------------------SEND MESSAGE TO GROUP-----------------------------------------------
+  router.post("/add_message_to_group/:groupId", async (req, res) => {
+    try {
+      const { senderId, message } = req.body;
+      const { groupId } = req.params;
+      const connection = await connectToDatabase();
+      const add_message_to_group = await connection.execute(
+        `INSERT INTO MESSEGES_IN_GROUP_TABLE(GROUPID,SENDERID,MESSAGE,CREATED_AT) 
+        VALUES(:groupId,:senderId,:message,SYSTIMESTAMP)`,
+        { groupId, senderId, message }
+      );
+      await connection.commit();
+      await connection.close();
+      return res.status(200).send("Message Sended to Group");
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
+    }
+  });
+  //-----------------------------------------PROFILES DISPLAY NOT PRESENT IN GROUP--------------------------------
+  router.get(
+    "/profiles_display_not_present_in_group/:groupId",
+    async (req, res) => {
+      try {
+        const { groupId } = req.params;
+        const connection = await connectToDatabase();
+        const users_not_their_in_group = await connection.execute(
+          `select * from users_data left join users_in_groups 
+     on users_data.ID = users_in_groups.USERID WHERE users_in_groups.ID =:groupId`,
+          { groupId }
+        );
+        connection.close();
+        return res.status(200).send(users_not_their_in_group.rows);
+      } catch (error) {
+        return res.status(500).send({ error: (error as Error).message });
+      }
+    }
+  );
+  //-----------------------------------------------ADD TO FAVOURITE--------------------------------------
+  router.post("/profiles_add_to_groups", async (req, res) => {
+    try {
+     
+      const { groupId,userId } = req.body;
+       if (!groupId || !userId) {
+        return res.status(400).send("Both groupId and userId are required.");
+      }
+  
+      const connection = await connectToDatabase();
+      const group_add_to_favourite = await connection.execute(
+        `INSERT INTO FAVOURITE_GROUPS_TABLE (GROUPID,USERID)VALUES(:groupId,:userId)`,
+        [groupId, userId]
+      );
+      await connection.commit();
+      await connection.close();
+      return res.status(200).send("Group Successfully Added To your Group");
+    } catch (error) {
+      console.error("Error adding group to favorite:", error);
+      return res.status(500).send({ error: (error as Error).message || "Internal Server Error" });
+    }
+  });
+  
+//-------------------------------------GET USER FAVOURITE GROUPS---------------------------------------
+router.get("/favourite_groups/:userId",async(req,res)=>{
+  try{
+     const {userId} = req.params;
+     const connection = await connectToDatabase();
+     const favourite_groups = await connection.execute(`
+     select * from groups_table inner join favourite_groups_table on 
+     groups_table.groupID = favourite_groups_table.groupid 
+     WHERE favourite_groups_table.userid = :userId`,{userId});
     await connection.close();
-    return res.status(200).send({ groupData: group_data.rows, groupMessages: group_messages.rows,count:count_of_users.rows});
-
+    return res.status(200).send(favourite_groups.rows);
   }catch(error){
-         return res.status(500).send({error:(error as Error).message})
+    return res.status(500).send({error:(error as Error).message});
   }
 })
-
-
-//----------------------------SEND MESSAGE TO GROUP-----------------------------------------------
-router.post("/add_message_to_group/:groupId",async(req,res)=>{
-  try{
-     const {senderId,message} = req.body;
-     const {groupId} = req.params;
-     const connection = await connectToDatabase();
-     const add_message_to_group = await connection.execute(`INSERT INTO MESSEGES_IN_GROUP_TABLE(GROUPID,SENDERID,MESSAGE,CREATED_AT) 
-     VALUES(:groupId,:senderId,:message,SYSTIMESTAMP)`,{groupId,senderId,message});
-     await connection.commit();
-     await connection.close();
-return res.status(200).send('Message Sended to Group');
-  }catch(error){ 
-    return res.status(500).send({error:(error as Error).message})
-  }
-})
-//-----------------------------------------PROFILES DISPLAY NOT PRESENT IN GROUP--------------------------------
-router.get('/profiles_display_not_present_in_group/:groupId',async(req,res)=>{
-  try{
-     const {groupId} = req.params;
-     const connection = await connectToDatabase();
-     const users_not_their_in_group = await connection.execute(`select * from users_data left join users_in_groups 
-     on users_data.ID = users_in_groups.USERID WHERE users_in_groups.ID =:groupId`,{groupId});
-     connection.close();
-     return res.status(200).send(users_not_their_in_group.rows);
-  }catch(error){ 
-    return res.status(500).send({error : (error as Error).message})
-  }
-})
-//-----------------------------------------------ADD TO FAVOURITE--------------------------------------
-
-return router;
+  return router;
 };
+
+
+
+// if (result.rows && result.rows.length > 0) {
+//   const response = result.rows.map((row: any) => ({
+//     groupId: row[0],
+//     groupName: row[1],
+//     created_by: row[2],
+//     profile_pic: row[4],
+//   }));
+//   return res.status(200).send(response);
+// }
