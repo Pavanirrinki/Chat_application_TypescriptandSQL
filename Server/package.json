@@ -4,13 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf dist && npx tsc",
+    "start": "nodemon src/index.ts",
+    "build": "rimraf dist && tsc",
     "ts.check": "tsc --project tsconfig.json",
     "add-build": "git add dist",
-    "start": "nodemon src/index.ts",
-    "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
+    },
   "author": "",
   "license": "ISC",
   "devDependencies": {
