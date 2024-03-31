@@ -48,10 +48,11 @@ function ChatsScreen({
   }
 });
 
-    socket.on("message", (data123: string[]) => {
-      console.log(data123, "daata123");
-
-      setChatting((prev: any) => [...prev, data123]);
+    socket.on("message", (data123: any) => {
+      console.log(data123, "daata123",receiverId);
+      if(receiverId == data123.sender_id){
+ setChatting((prev: any) => [...prev, data123]);
+      }
     });
 
     socket.on("Typingstarted", (data: any) => {
@@ -63,7 +64,7 @@ function ChatsScreen({
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [receiverId]);
   useEffect(() => {
     GetMessage(parsed_data?.sendeddata?.userId, receiverId)
       .then((data) => {

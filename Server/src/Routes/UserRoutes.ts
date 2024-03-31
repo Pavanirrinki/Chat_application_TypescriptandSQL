@@ -165,6 +165,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
           );
         }
         if (onlineusers[ReceiverId]) {
+          
            io.to(onlineusers[ReceiverId]).emit("message", {
             message_id: uuid,
             sender_id: SenderId,
@@ -553,17 +554,21 @@ router.get("/favourite_groups/:userId",async(req,res)=>{
     return res.status(500).send({error:(error as Error).message});
   }
 })
+//-------------------DELETE FAVOURITE GROUP---------------------------------------------------------
+router.delete("/delete_favourite_groups/:groupId/:userId",async(req,res)=>{
+  try{
+     const {groupId,userId} = req.params;
+     const connection = await connectToDatabase();
+     const favourite_groups = await connection.execute(`DELETE FROM FAVOURITE_GROUPS_TABLE  WHERE GROUPID =:groupId and USERID =:userId`,[groupId,userId]);
+await connection.commit();
+    await connection.close();
+    return res.status(200).send('Successfully Group Deleted From Favourites');
+  }catch(error){
+    return res.status(500).send({error:(error as Error).message});
+  }
+})
   return router;
 };
 
 
 
-// if (result.rows && result.rows.length > 0) {
-//   const response = result.rows.map((row: any) => ({
-//     groupId: row[0],
-//     groupName: row[1],
-//     created_by: row[2],
-//     profile_pic: row[4],
-//   }));
-//   return res.status(200).send(response);
-// }

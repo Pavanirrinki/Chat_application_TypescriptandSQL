@@ -6,12 +6,12 @@ import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { API, GetMessage } from "./Api";
+import { API} from "./Api";
 import { Badge, Divider, Paper, Stack } from "@mui/material";
 import { io } from "socket.io-client";
 import CustomizedInputBase from "./CustomSearch";
 import { ChatContext } from "./Context";
-
+import { useLocation } from "react-router-dom";
 interface Onlineusers {
   [key: string]: string;
 }
@@ -30,17 +30,16 @@ const Profiles = ({
   setProfileName: (first_Name: any) => void;
   setReceiverId: (id: any) => void;
 }): JSX.Element => {
-  const { chatData, setChatData } = useContext(ChatContext);
+  const { chatData, setChatData,onlineusers } = useContext(ChatContext);
   const [profiles, setProfiles] = useState<String[] | null>(null);
-  const [onlineusers, setOnlineusers] = useState<Onlineusers | null>(null);
-  const [searchProfile, setSearchProfile] = useState<String>("");
+ const [searchProfile, setSearchProfile] = useState<String>("");
 
   const [searchProfile123, setSearchProfile123] = useState<String[] | null>(
     null
   );
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
-
+  const location = useLocation();
   const DisplayChatting = (id: String, first_Name: String, pic: String) => {
     setReceiverId(id);
     setProfileName(first_Name);
@@ -48,15 +47,6 @@ const Profiles = ({
   };
 
   useEffect(() => {
-    const socket = io("http://localhost:5001/",{
-      query: {
-        userId: parsed_data?.sendeddata?.userId,
-      },
-    });
-
-    socket.on("custom_socket", (data: any) => {
-      setOnlineusers(data.message);
-    });
 
     axios
       .get(API + "user_data")

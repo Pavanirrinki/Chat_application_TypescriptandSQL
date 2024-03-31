@@ -10,11 +10,14 @@ import axios from "axios";
 import { API } from "./Api";
 import StarIcon from "@mui/icons-material/Star";
 import { Box, Paper } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 function FavouriteGroups() {
+  const [delete_favourite_group,setDelete_favourite_group] = React.useState<boolean>(false);
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
   const [favouriteGroup, setFavouriteGroup] = React.useState<any>(null);
+  const navigate = useNavigate();
   React.useEffect(() => {
     axios
       .get(API + `favourite_groups/${parsed_data?.sendeddata?.userId}`)
@@ -24,13 +27,19 @@ function FavouriteGroups() {
           "favourite_groupspppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
         );
         setFavouriteGroup(data.data);
+        setDelete_favourite_group(false);
       })
       .catch((error) => {
         console.log(error.message);
       });
-  }, []);
+  }, [delete_favourite_group]);
 const DeleteFromFavourites =(e:React.MouseEvent<SVGSVGElement,MouseEvent>,groupId:number)=>{
-
+e.preventDefault();
+e.stopPropagation();
+axios.delete(API+`delete_favourite_groups/${groupId}/${parsed_data?.sendeddata?.userId}`).then((data)=>{
+  console.log(data.data);
+  setDelete_favourite_group(true);
+}).catch((error)=>console.log(error.message))
 }
   return (
     <List
@@ -68,7 +77,9 @@ const DeleteFromFavourites =(e:React.MouseEvent<SVGSVGElement,MouseEvent>,groupI
       {favouriteGroup !== null &&
         favouriteGroup.map((userdata: any[], index: React.Key | null | undefined) => (
           <React.Fragment key={index}>
-            <ListItem alignItems="flex-start">
+            <ListItem alignItems="flex-start" onClick={()=>{
+                    navigate('/groups',{state:userdata[0]})
+            }}>
               <ListItemAvatar>
                 <Avatar
                   alt="Remy Sharp"

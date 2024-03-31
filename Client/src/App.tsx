@@ -60,6 +60,9 @@ function App() {
       query: {
         userId: parsed_data?.sendeddata?.userId,
       },
+     })
+     socket.on("custom_socket", (data: any) => {
+      console.log(data.message);
     });
   },[])
 console.log("socketed",socket);

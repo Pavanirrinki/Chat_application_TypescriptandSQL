@@ -33,7 +33,7 @@ import { API } from "./Api";
 import { AlignItemsList } from "./ListItems";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { Await, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChatContext } from "./Context";
 import SimpleDialogDemo from "../MuiComponents/DialoBox";
 export interface allgroupsofuserprops {
@@ -60,7 +60,7 @@ function Groups() {
   const [message, setMessage] = React.useState<string>("");
   const user_data = localStorage.getItem("Chat_user_details");
   const parsed_data = user_data && JSON.parse(user_data);
-
+  const location = useLocation();
   const { chatData, setChatData, socket, setSocket } = useContext(ChatContext);
 
   function formatDate(dateString: string | number | Date) {
@@ -142,26 +142,27 @@ function Groups() {
         console.log((error as Error).message);
       }
     };
-  
-    socket.on("chat message", handleChatMessage); // Listen for incoming messages
-  
+  socket.on("chat message", handleChatMessage); 
     return () => {
       socket.off("chat message", handleChatMessage);
-    };
+    }
+  
   }, [socket, groupId]);
   
   
 
   useEffect(() => {
+   setGroupId(groupId ? groupId : location.state);
     axios
-      .get(API + `group_data/${groupId}`)
+      .get(API + `group_data/${groupId ? groupId : location.state}`)
       .then((data) => {
         setGroupmessageswithdata(data.data); 
+        
       })
       .catch((error) => {
         console.log(error.message);
       });
-  }, [groupId]);
+  }, [groupId,location]);
 
 
 
@@ -211,8 +212,8 @@ function Groups() {
   ) => {
     setMessage(e.target.value);
   };
-  console.log(socket.on, "soiloftheday");
-
+ // console.log(socket.on, "soiloftheday");
+console.log(location,"locatio")
   console.log("groupId", groupmessageswithdata, "groupId");
   return (
     <Container>
@@ -270,7 +271,7 @@ function Groups() {
           )}
         </Grid>
         <Grid item xs={8}>
-          {groupId ? (
+          {groupId  ? (
             <Container>
               {/*--------------------------- HEADER COMPOINENT ----------------------------------------------*/}
               <Card

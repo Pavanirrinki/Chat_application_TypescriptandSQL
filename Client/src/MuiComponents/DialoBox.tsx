@@ -83,7 +83,7 @@ export default function SimpleDialogDemo({memberscount,groupId}:{memberscount:nu
 
      <Chip onClick={handleClickOpen}
     
-                      label={`${memberscount && memberscount} ${memberscount == 1
+                      label={`${(memberscount&& memberscount !== undefined) && memberscount} ${memberscount == 1
                           ? "Member"
                           : "Members"}`}
     color="success"
