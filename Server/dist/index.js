@@ -94,6 +94,9 @@ app.post("/uploads", upload.single("file"), (req, res) => __awaiter(void 0, void
     console.log(req.file, "req.files req.files");
     res.status(200).json((_a = req.file) === null || _a === void 0 ? void 0 : _a.filename);
 }));
+app.get("/used_data123",async(req,res)=>{
+    res.send("HELLO GUYS WHAT ARE YOU DOING");
+})
 server.listen(port, () => {
     console.log(`Server started successfully on port: ${port}`);
 });
