@@ -33,4 +33,3 @@ function connectToDatabase() {
     });
 }
 exports.connectToDatabase = connectToDatabase;
-//# sourceMappingURL=Database.js.map

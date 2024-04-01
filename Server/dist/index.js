@@ -97,4 +97,3 @@ app.post("/uploads", upload.single("file"), (req, res) => __awaiter(void 0, void
 server.listen(port, () => {
     console.log(`Server started successfully on port: ${port}`);
 });
-//# sourceMappingURL=index.js.map

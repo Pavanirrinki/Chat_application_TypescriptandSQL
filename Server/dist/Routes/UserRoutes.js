@@ -491,4 +491,3 @@ module.exports = function (emitter, onlineusers) {
     }));
     return router;
 };
-//# sourceMappingURL=UserRoutes.js.map
