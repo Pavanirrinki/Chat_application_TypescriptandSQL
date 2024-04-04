@@ -226,7 +226,7 @@ const SendStatus =(e:React.MouseEvent<HTMLButtonElement, MouseEvent>)=>{
      return(
       <>
       {(increaseStatuscount == index) &&
-       <img src={data.status} alt="" style={{height:"80vh",width:"100%"}}/>}
+       <img src={data.status} alt="" style={{height:"65vh",width:"90%"}}/>}
        </>
      )
    }):<Container

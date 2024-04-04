@@ -18,19 +18,19 @@ function Mainscreen(){
  const [receiverId,setReceiverId] = useState<string>('');
  const [profileName,setProfileName] = useState<String>("");
  const [profile_pic,setProfile_pic] = useState<string>('');
-
+ const [unseen_messages, setUnseen_messages] = useState<any>(null);
 
 
  return( 
     <Grid container>
       <Grid item xs={12} md={3}>
         
-        <Profiles receiverId={receiverId} setReceiverId={setReceiverId} 
-        profileName={profileName} setProfileName={setProfileName} profile_pic={profile_pic} setProfile_pic={setProfile_pic} 
+        <Profiles receiverId={receiverId} setReceiverId={setReceiverId} unseen_messages={unseen_messages}
+        profileName={profileName} setProfileName={setProfileName} profile_pic={profile_pic} setProfile_pic={setProfile_pic} setUnseen_messages={setUnseen_messages}
        />
       </Grid>
       <Grid item xs={12} md={9} sx={{display:{xs:"none",md:"block"}}}>
-        <ChatsScreen receiverId={receiverId} profileName={profileName} profile_pic={profile_pic} />
+        <ChatsScreen receiverId={receiverId} profileName={profileName} profile_pic={profile_pic} setUnseen_messages={setUnseen_messages}/>
       </Grid>
       </Grid>
   )

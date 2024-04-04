@@ -18,6 +18,7 @@ import axios from "axios";
 import { API, GetMessage, SendMessageApi } from "./Api";
 import { Box, CircularProgress } from "@mui/material";
 import Login from "./Login";
+import { Console } from "console";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialogContent-root": {
@@ -48,7 +49,7 @@ export default function BasicMenu({
   const [opened, setOpened] = React.useState(false);
   const [image, setImage] = React.useState<string | ArrayBuffer | null>(null);
   const [loadImage, setLoadImage] = React.useState<boolean>(false);
-  const [base64data, setBase64data] = React.useState<string>("");
+
   const handleClosed = () => {
     setOpened(false);
   };
@@ -77,73 +78,24 @@ export default function BasicMenu({
   const SendImageFile = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     console.log(imagefile, opened, senderId, receiverId);
-    if (imagefile) {
-      console.log("pppppppp");
-      const formData = new FormData();
-      if (typeof imagefile === "string") {
-        formData.append("file", imagefile);
-      } else if (imagefile instanceof Blob) {
-        formData.append("file", imagefile);
-      } else {
-        console.error("Invalid selectedImage type");
-        return;
-      }
 
-      formData.append("upload_preset", "xenymzuf");
-
-      try {
-        setLoadImage(true);
-        const response = await axios.post(
-          "https://api.cloudinary.com/v1_1/dvbvggl5f/upload",
-          formData
-        );
-        axios
-          .post(API + "sendmessage", {
-            SenderId: senderId,
-            ReceiverId: receiverId,
-            message: response.data.url,
-          })
-          .then((data) => {
-            console.log(data.data);
-            setOpened(false);
-            setLoaddata(true);
-            setLoadImage(false);
-            setAnchorEl(null);
-          })
-          .catch((error) => console.log(error.message));
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
-
-  const pdfFileupload = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    console.log("janasena");
     try {
-      const formData = new FormData();
-      formData.append("file", imagefile);
+      setLoadImage(true);
 
-      // Upload file
-      const uploadResponse = await axios
-        .post("http://localhost:5001/uploads", formData)
-        .then(async (data) => {
-          data.data &&
-            (await axios
-              .post(API + "sendmessage", {
-                SenderId: senderId,
-                ReceiverId: receiverId,
-                message: data.data,
-              })
-              .then((data) => {
-                console.log(data.data);
-                setOpened(false);
-                setLoaddata(true);
-                setLoadImage(false);
-                setAnchorEl(null);
-              })
-              .catch((error) => console.log(error.message)));
-        });
+      axios
+        .post(API + "sendmessage", {
+          SenderId: senderId,
+          ReceiverId: receiverId,
+          message: image,
+        })
+        .then((data) => {
+          console.log(data.data);
+          setOpened(false);
+          setLoaddata(true);
+          setLoadImage(false);
+          setAnchorEl(null);
+        })
+        .catch((error) => console.log(error.message));
     } catch (error) {
       console.error(error);
     }
@@ -273,7 +225,7 @@ export default function BasicMenu({
                 </Box>
               )
             ) : !loadImage ? (
-              <Button autoFocus onClick={pdfFileupload}>
+              <Button autoFocus onClick={SendImageFile}>
                 <SendIcon />
               </Button>
             ) : (

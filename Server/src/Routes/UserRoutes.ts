@@ -125,6 +125,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
     "/sendmessage",
     async (req: express.Request, res: express.Response) => {
       const { SenderId, message, ReceiverId, statusId, status } = req.body;
+      const messageasbinary = await Buffer.from(message, "utf-8");
       console.log(onlineusers, "receiverid");
       try {
         console.log(onlineusers[ReceiverId], "receiverid");
@@ -137,15 +138,10 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
         console.log("DATA");
         const SYS_DATE = Date.now();
         if (!statusId && !status) {
-          const sendmessage = await connection.execute(
-            `INSERT INTO MESSAGES_TABLE(ID,SENDERID,MESSAGE,CREATED_AT) VALUES
-       (:uuid,:SenderId,:message,:SYS_DATE)`,
-            { uuid, SenderId, message, SYS_DATE }
-          );
-          const chatting = await connection.execute(
+        const chatting = await connection.execute(
             `INSERT INTO CHATTING_TABLE(MESSAGEID,SENDERID,RECEIVERID,MESSAGE,CREATED_AT) VALUES
-       (:uuid,:SenderId,:ReceiverId,:message,:SYS_DATE)`,
-            { uuid, SenderId, ReceiverId, message, SYS_DATE }
+       (:uuid,:SenderId,:ReceiverId,:messageasbinary,:SYS_DATE)`,
+            { uuid, SenderId, ReceiverId, messageasbinary, SYS_DATE }
           );
         } else {
           const binaryData = Buffer.from(status, "utf-8");
@@ -165,8 +161,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
           );
         }
         if (onlineusers[ReceiverId]) {
-          
-           io.to(onlineusers[ReceiverId]).emit("message", {
+          io.to(onlineusers[ReceiverId]).emit("message", {
             message_id: uuid,
             sender_id: SenderId,
             receiver_id: ReceiverId,
@@ -205,6 +200,8 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
 
       for (const row of personal_chatting.rows) {
         let lob_data = null;
+        let message_data = null;
+        console.log(row, "row3");
 
         if (row[6] !== null) {
           let data = "";
@@ -213,10 +210,26 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
               data += chunk;
             });
             row[6].on("end", () => {
-              lob_data = data;
+              message_data = data;
               resolve();
             });
             row[6].on("error", (err: Error) => {
+              reject(err);
+            });
+          });
+        }
+
+        if (row[5] !== null) {
+          let data = "";
+          await new Promise<void>((resolve, reject) => {
+            row[5].on("data", (chunk: any) => {
+              data += chunk;
+            });
+            row[5].on("end", () => {
+              lob_data = data;
+              resolve();
+            });
+            row[5].on("error", (err: Error) => {
               reject(err);
             });
           });
@@ -226,7 +239,7 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
           message_id: row[0],
           sender_id: row[1],
           receiver_id: row[2],
-          message: row[3],
+          message: message_data,
           created_at: row[4],
           statusId: row[5] ? row[5] : null,
           lob_data: lob_data,
@@ -467,13 +480,11 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
         [groupId]
       );
       await connection.close();
-      return res
-        .status(200)
-        .send({
-          groupData: group_data.rows,
-          groupMessages: group_messages.rows,
-          count: count_of_users.rows,
-        });
+      return res.status(200).send({
+        groupData: group_data.rows,
+        groupMessages: group_messages.rows,
+        count: count_of_users.rows,
+      });
     } catch (error) {
       return res.status(500).send({ error: (error as Error).message });
     }
@@ -519,12 +530,11 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
   //-----------------------------------------------ADD TO FAVOURITE--------------------------------------
   router.post("/profiles_add_to_groups", async (req, res) => {
     try {
-     
-      const { groupId,userId } = req.body;
-       if (!groupId || !userId) {
+      const { groupId, userId } = req.body;
+      if (!groupId || !userId) {
         return res.status(400).send("Both groupId and userId are required.");
       }
-  
+
       const connection = await connectToDatabase();
       const group_add_to_favourite = await connection.execute(
         `INSERT INTO FAVOURITE_GROUPS_TABLE (GROUPID,USERID)VALUES(:groupId,:userId)`,
@@ -535,40 +545,86 @@ module.exports = function (emitter: any, onlineusers: OnlineUsers) {
       return res.status(200).send("Group Successfully Added To your Group");
     } catch (error) {
       console.error("Error adding group to favorite:", error);
-      return res.status(500).send({ error: (error as Error).message || "Internal Server Error" });
+      return res
+        .status(500)
+        .send({ error: (error as Error).message || "Internal Server Error" });
     }
   });
-  
-//-------------------------------------GET USER FAVOURITE GROUPS---------------------------------------
-router.get("/favourite_groups/:userId",async(req,res)=>{
-  try{
-     const {userId} = req.params;
-     const connection = await connectToDatabase();
-     const favourite_groups = await connection.execute(`
+
+  //-------------------------------------GET USER FAVOURITE GROUPS---------------------------------------
+  router.get("/favourite_groups/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const connection = await connectToDatabase();
+      const favourite_groups = await connection.execute(
+        `
      select * from groups_table inner join favourite_groups_table on 
      groups_table.groupID = favourite_groups_table.groupid 
-     WHERE favourite_groups_table.userid = :userId`,{userId});
-    await connection.close();
-    return res.status(200).send(favourite_groups.rows);
-  }catch(error){
-    return res.status(500).send({error:(error as Error).message});
-  }
-})
-//-------------------DELETE FAVOURITE GROUP---------------------------------------------------------
-router.delete("/delete_favourite_groups/:groupId/:userId",async(req,res)=>{
+     WHERE favourite_groups_table.userid = :userId`,
+        { userId }
+      );
+      await connection.close();
+      return res.status(200).send(favourite_groups.rows);
+    } catch (error) {
+      return res.status(500).send({ error: (error as Error).message });
+    }
+  });
+  //-------------------DELETE FAVOURITE GROUP---------------------------------------------------------
+  router.delete(
+    "/delete_favourite_groups/:groupId/:userId",
+    async (req, res) => {
+      try {
+        const { groupId, userId } = req.params;
+        const connection = await connectToDatabase();
+        const favourite_groups = await connection.execute(
+          `DELETE FROM FAVOURITE_GROUPS_TABLE  WHERE GROUPID =:groupId and USERID =:userId`,
+          [groupId, userId]
+        );
+        await connection.commit();
+        await connection.close();
+        return res
+          .status(200)
+          .send("Successfully Group Deleted From Favourites");
+      } catch (error) {
+        return res.status(500).send({ error: (error as Error).message });
+      }
+    }
+  );
+//-----------------------------UPDATE SEEN STATUS-----------------------------------------------
+router.put("/update_seen_status",async(req,res)=>{
+  const {receiver_id,sender_id} = req.body;
   try{
-     const {groupId,userId} = req.params;
-     const connection = await connectToDatabase();
-     const favourite_groups = await connection.execute(`DELETE FROM FAVOURITE_GROUPS_TABLE  WHERE GROUPID =:groupId and USERID =:userId`,[groupId,userId]);
+ const connection = await connectToDatabase();
+ const message_seen_update = await connection.execute(`UPDATE CHATTING_TABLE SET SEEN = 'Y' WHERE RECEIVERID =:receiver_id AND SENDERID =:sender_id`,
+ {receiver_id,sender_id});
+console.log(sender_id,receiver_id,'pollllllll');
 await connection.commit();
-    await connection.close();
-    return res.status(200).send('Successfully Group Deleted From Favourites');
+ await connection.close();
+ return res.status(200).send("Messages Seen Successfully");
+  }catch(error){
+    return res.status(500).send({error : (error as Error).message})
+  }
+});
+//--------------------------GET SEEN AND UNSEEN MESSAGES-------------------------------------
+router.get('/get_all_messages_of_seen_userid/:receiver_id',async(req,res)=>{
+  const {receiver_id} = req.params;
+  try{
+  const connection = await connectToDatabase();
+  const seen_messages_of_user = await connection.execute(`SELECT SENDERID, RECEIVERID, SEEN, COUNT(*)
+  FROM CHATTING_TABLE
+  WHERE RECEIVERID = :receiver_id AND SEEN = 'N'
+  GROUP BY SENDERID, RECEIVERID, SEEN`,{receiver_id});
+  await connection.close();
+  const data = seen_messages_of_user && seen_messages_of_user.rows?.map((row:any)=>({
+              senderId : row[0],
+              receiver_id:row[1],
+              seen:row[2],
+              count:row[3]
+  }));
+  return res.status(200).send(data);
   }catch(error){
     return res.status(500).send({error:(error as Error).message});
   }
-})
+});
   return router;
 };
-
-
-
