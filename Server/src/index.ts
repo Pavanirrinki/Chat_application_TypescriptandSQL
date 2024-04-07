@@ -40,6 +40,7 @@ io.on("connection", (socket) => {
   }
 
   socket.on("join Room", (data: any) => {
+    console.log(data,"joined in room")
     socket.join(data); // Join the room corresponding to the group
   });
 

@@ -36,6 +36,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChatContext } from "./Context";
 import SimpleDialogDemo from "../MuiComponents/DialoBox";
+import { io } from "socket.io-client";
+import { Console } from "console";
 export interface allgroupsofuserprops {
   created_by: string;
   groupId: number;
@@ -51,9 +53,8 @@ function Groups() {
   );
   const [opened, setOpened] = React.useState<boolean>(false);
   const [groupname, setGroupname] = React.useState<string>("");
-  const [allgroupsofuser, setAllgroupsofuser] = React.useState<
-    allgroupsofuserprops[] | null
-  >(null);
+  const [allgroupsofuser, setAllgroupsofuser] = React.useState<allgroupsofuserprops[] | null >(null);
+  const [searchgroups,setSearchGroups]   = React.useState<allgroupsofuserprops[] | null> (null);
   const [groupmessageswithdata, setGroupmessageswithdata] =
     React.useState<any>(null);
   const [groupId, setGroupId] = React.useState<number | null>(null);
@@ -91,9 +92,7 @@ function Groups() {
     return formattedDate;
   }
 
-
-
-  console.log(groupId,"pora ----")
+  console.log(groupId, "pora ----");
   const addmembertogroup = Boolean(anchorElement);
   const handleClicked = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElement(event.currentTarget);
@@ -124,6 +123,7 @@ function Groups() {
       .then((data: any) => {
         console.log(data.data, "particular user");
         setAllgroupsofuser(data.data);
+        setSearchGroups(data.data);
       })
       .catch((error) => {
         console.log((error as Error).message);
@@ -131,40 +131,41 @@ function Groups() {
   }, []);
 
   useEffect(() => {
-    const handleChatMessage = async (msg: { message: string, groupID: number }) => {
-      console.log(groupId === msg.groupID, 'po000000', groupId, msg.groupID);
-      try {
-        if (groupId === msg.groupID) {
-          const response = await axios.get(API + `group_data/${msg.groupID}`);
-          setGroupmessageswithdata(response.data); // Update the messages for the group
+    if (socket) {
+      const handleChatMessage = async (msg: {
+        message: string;
+        groupID: number;
+      }) => {
+        console.log(groupId === msg.groupID, "po000000", groupId, msg.groupID);
+        try {
+          if (groupId === msg.groupID) {
+            const response = await axios.get(API + `group_data/${msg.groupID}`);
+            setGroupmessageswithdata(response.data); // Update the messages for the group
+          }
+        } catch (error) {
+          console.log((error as Error).message);
         }
-      } catch (error) {
-        console.log((error as Error).message);
-      }
-    };
-  socket.on("chat message", handleChatMessage); 
-    return () => {
-      socket.off("chat message", handleChatMessage);
+      };
+
+      socket.on("chat message", handleChatMessage); // Listen for incoming messages
+
+      return () => {
+        socket.off("chat message", handleChatMessage);
+      };
     }
-  
   }, [socket, groupId]);
-  
-  
 
   useEffect(() => {
-   setGroupId(groupId ? groupId : location.state);
+    setGroupId(groupId ? groupId : location.state);
     axios
       .get(API + `group_data/${groupId ? groupId : location.state}`)
       .then((data) => {
-        setGroupmessageswithdata(data.data); 
-        
+        setGroupmessageswithdata(data.data);
       })
       .catch((error) => {
         console.log(error.message);
       });
-  }, [groupId,location]);
-
-
+  }, [groupId, location]);
 
   const handlesubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -190,9 +191,11 @@ function Groups() {
       });
     handleClosed();
   };
-  const SendMessageforgroups = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const SendMessageforgroups = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
     e.preventDefault();
-  
+
     await axios
       .post(API + `add_message_to_group/${groupId}`, {
         senderId: parsed_data?.sendeddata?.userId,
@@ -212,8 +215,18 @@ function Groups() {
   ) => {
     setMessage(e.target.value);
   };
- // console.log(socket.on, "soiloftheday");
-console.log(location,"locatio")
+
+  const handlesearch = (e: React.ChangeEvent<HTMLInputElement>) =>{
+  //console.log(allgroupsofuser);
+  console.log(e.target.value);
+  const filtered_groups = allgroupsofuser &&  allgroupsofuser.filter(item =>
+    item.groupName.toLowerCase().includes(e.target.value.toLowerCase())
+);
+console.log(filtered_groups,'pppppppppppppppppppppppppppppppppppppppppppppppppppppp');
+setSearchGroups(filtered_groups);
+  }
+  // console.log(socket.on, "soiloftheday");
+  console.log(location, "locatio");
   console.log("groupId", groupmessageswithdata, "groupId");
   return (
     <Container>
@@ -250,14 +263,17 @@ console.log(location,"locatio")
                 }}
               >
                 <MenuItem onClick={handleClickOpen}>Add Group</MenuItem>
-                <MenuItem onClick={()=>navigate("/favourite_groups")}>Favourites</MenuItem>
-                <MenuItem onClick={()=>navigate("/")}>Chats</MenuItem>
+                <MenuItem onClick={() => navigate("/favourite_groups")}>
+                  Favourites
+                </MenuItem>
+                <MenuItem onClick={() => navigate("/")}>Chats</MenuItem>
               </Menu>
             </div>
             <InputBase
               sx={{ ml: 1, flex: 1 }}
               placeholder="Search Groups..."
               inputProps={{ "aria-label": "Search Groups..." }}
+              onChange={handlesearch}
             />
             <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
               <SearchIcon />
@@ -265,13 +281,13 @@ console.log(location,"locatio")
           </Paper>
           {allgroupsofuser !== null && (
             <AlignItemsList
-              allgroupsofuser={allgroupsofuser}
+              allgroupsofuser={searchgroups}
               setGroupId={setGroupId}
             />
           )}
         </Grid>
         <Grid item xs={8}>
-          {groupId  ? (
+          {groupId ? (
             <Container>
               {/*--------------------------- HEADER COMPOINENT ----------------------------------------------*/}
               <Card
@@ -313,16 +329,13 @@ console.log(location,"locatio")
                     groupmessageswithdata &&
                     groupmessageswithdata?.groupData[0][1]
                   }
-
                   subheader={
-                    <SimpleDialogDemo memberscount={groupmessageswithdata?.count[0]} groupId={groupId}/>
+                    <SimpleDialogDemo
+                      memberscount={groupmessageswithdata?.count[0]}
+                      groupId={groupId}
+                    />
                   }
-                    
-            
-                      
-                    
                 />
-               
               </Card>
 
               {/* -------------------------------GROUP CHATTING MEMU ICON----------------------------------------- */}
@@ -363,19 +376,29 @@ console.log(location,"locatio")
                                   </ListItemAvatar>
                                   <Paper sx={{ width: "100%", p: 1.5 }}>
                                     <ListItemText
-                                      sx={{ m: 0,display:"flex",flexDirection:"column"}}
-                                      primary={ 
-                                      <Typography variant="caption" sx={{opacity:0.7}}>
-                                      {`${data[1]} ${data[2]}`}
-                                    </Typography>
-                                    }
+                                      sx={{
+                                        m: 0,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                      primary={
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ opacity: 0.7 }}
+                                        >
+                                          {`${data[1]} ${data[2]}`}
+                                        </Typography>
+                                      }
                                       secondary={
-                                        <Typography variant="caption" sx={{fontWeight:"600"}}>
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ fontWeight: "600" }}
+                                        >
                                           {data[10]}
                                         </Typography>
                                       }
                                     />
-                                     <Box
+                                    <Box
                                       sx={{
                                         display: "flex",
                                         alignItems: "center",
@@ -383,7 +406,10 @@ console.log(location,"locatio")
                                         mt: 1,
                                       }}
                                     >
-                                       <Typography variant="body2" sx={{fontSize:"12px",opacity:0.7}}>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{ fontSize: "12px", opacity: 0.7 }}
+                                      >
                                         {formatDate(data[11])}
                                       </Typography>
                                     </Box>
@@ -417,14 +443,24 @@ console.log(location,"locatio")
                                     }}
                                   >
                                     <ListItemText
-                                      sx={{ m: 0,display:"flex",flexDirection:"column"}}
-                                      primary={ 
-                                      <Typography variant="caption" sx={{opacity:0.7}}>
-                                      {`${data[1]} ${data[2]}`}
-                                    </Typography>
-                                    }
+                                      sx={{
+                                        m: 0,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                      }}
+                                      primary={
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ opacity: 0.7 }}
+                                        >
+                                          {`${data[1]} ${data[2]}`}
+                                        </Typography>
+                                      }
                                       secondary={
-                                        <Typography variant="caption" sx={{fontWeight:"600"}}>
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ fontWeight: "600" }}
+                                        >
                                           {data[10]}
                                         </Typography>
                                       }
@@ -437,7 +473,10 @@ console.log(location,"locatio")
                                         mt: 1,
                                       }}
                                     >
-                                      <Typography variant="body2" sx={{fontSize:"12px",opacity:0.7}}>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{ fontSize: "12px", opacity: 0.7 }}
+                                      >
                                         {formatDate(data[11])}
                                       </Typography>
                                     </Box>

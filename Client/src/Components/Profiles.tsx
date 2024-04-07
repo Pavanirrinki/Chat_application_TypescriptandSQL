@@ -206,7 +206,7 @@ const Profiles = ({
                         data[0] == seendata?.senderId &&
                         data[0] !== parsed_data?.sendeddata?.userId && (
                           <div style={{backgroundColor:"green",padding:'0px 10px',borderRadius:"50%"}}>
-                          <p style={{color:"white",fontWeight:"bold",padding:"0px"}}>{seendata.count}</p>
+                          <p style={{color:"white",fontWeight:"bold",padding:"0px",margin:"5px"}}>{seendata.count}</p>
                          </div>
                         )
                       );
