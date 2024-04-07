@@ -122,6 +122,7 @@ module.exports = function (emitter, onlineusers) {
     //-------------------------------------------SEND MESSAGE---------------------------------------------------------------
     router.post("/sendmessage", (req, res) => __awaiter(this, void 0, void 0, function* () {
         const { SenderId, message, ReceiverId, statusId, status } = req.body;
+        const messageasbinary = yield Buffer.from(message, "utf-8");
         console.log(onlineusers, "receiverid");
         try {
             console.log(onlineusers[ReceiverId], "receiverid");
@@ -134,10 +135,8 @@ module.exports = function (emitter, onlineusers) {
             console.log("DATA");
             const SYS_DATE = Date.now();
             if (!statusId && !status) {
-                const sendmessage = yield connection.execute(`INSERT INTO MESSAGES_TABLE(ID,SENDERID,MESSAGE,CREATED_AT) VALUES
-       (:uuid,:SenderId,:message,:SYS_DATE)`, { uuid, SenderId, message, SYS_DATE });
                 const chatting = yield connection.execute(`INSERT INTO CHATTING_TABLE(MESSAGEID,SENDERID,RECEIVERID,MESSAGE,CREATED_AT) VALUES
-       (:uuid,:SenderId,:ReceiverId,:message,:SYS_DATE)`, { uuid, SenderId, ReceiverId, message, SYS_DATE });
+       (:uuid,:SenderId,:ReceiverId,:messageasbinary,:SYS_DATE)`, { uuid, SenderId, ReceiverId, messageasbinary, SYS_DATE });
             }
             else {
                 const binaryData = Buffer.from(status, "utf-8");
@@ -182,6 +181,8 @@ module.exports = function (emitter, onlineusers) {
             const modified_data = [];
             for (const row of personal_chatting.rows) {
                 let lob_data = null;
+                let message_data = null;
+                console.log(row, "row3");
                 if (row[6] !== null) {
                     let data = "";
                     yield new Promise((resolve, reject) => {
@@ -189,10 +190,25 @@ module.exports = function (emitter, onlineusers) {
                             data += chunk;
                         });
                         row[6].on("end", () => {
-                            lob_data = data;
+                            message_data = data;
                             resolve();
                         });
                         row[6].on("error", (err) => {
+                            reject(err);
+                        });
+                    });
+                }
+                if (row[5] !== null) {
+                    let data = "";
+                    yield new Promise((resolve, reject) => {
+                        row[5].on("data", (chunk) => {
+                            data += chunk;
+                        });
+                        row[5].on("end", () => {
+                            lob_data = data;
+                            resolve();
+                        });
+                        row[5].on("error", (err) => {
                             reject(err);
                         });
                     });
@@ -201,7 +217,7 @@ module.exports = function (emitter, onlineusers) {
                     message_id: row[0],
                     sender_id: row[1],
                     receiver_id: row[2],
-                    message: row[3],
+                    message: message_data,
                     created_at: row[4],
                     statusId: row[5] ? row[5] : null,
                     lob_data: lob_data,
@@ -399,9 +415,7 @@ module.exports = function (emitter, onlineusers) {
      `, [groupId]);
             const count_of_users = yield connection.execute(`SELECT COUNT(*) FROM USERS_IN_GROUPS WHERE ID=:groupId`, [groupId]);
             yield connection.close();
-            return res
-                .status(200)
-                .send({
+            return res.status(200).send({
                 groupData: group_data.rows,
                 groupMessages: group_messages.rows,
                 count: count_of_users.rows,
@@ -456,7 +470,9 @@ module.exports = function (emitter, onlineusers) {
         }
         catch (error) {
             console.error("Error adding group to favorite:", error);
-            return res.status(500).send({ error: error.message || "Internal Server Error" });
+            return res
+                .status(500)
+                .send({ error: error.message || "Internal Server Error" });
         }
     }));
     //-------------------------------------GET USER FAVOURITE GROUPS---------------------------------------
@@ -483,7 +499,47 @@ module.exports = function (emitter, onlineusers) {
             const favourite_groups = yield connection.execute(`DELETE FROM FAVOURITE_GROUPS_TABLE  WHERE GROUPID =:groupId and USERID =:userId`, [groupId, userId]);
             yield connection.commit();
             yield connection.close();
-            return res.status(200).send('Successfully Group Deleted From Favourites');
+            return res
+                .status(200)
+                .send("Successfully Group Deleted From Favourites");
+        }
+        catch (error) {
+            return res.status(500).send({ error: error.message });
+        }
+    }));
+    //-----------------------------UPDATE SEEN STATUS-----------------------------------------------
+    router.put("/update_seen_status", (req, res) => __awaiter(this, void 0, void 0, function* () {
+        const { receiver_id, sender_id } = req.body;
+        try {
+            const connection = yield (0, Database_1.connectToDatabase)();
+            const message_seen_update = yield connection.execute(`UPDATE CHATTING_TABLE SET SEEN = 'Y' WHERE RECEIVERID =:receiver_id AND SENDERID =:sender_id`, { receiver_id, sender_id });
+            console.log(sender_id, receiver_id, 'pollllllll');
+            yield connection.commit();
+            yield connection.close();
+            return res.status(200).send("Messages Seen Successfully");
+        }
+        catch (error) {
+            return res.status(500).send({ error: error.message });
+        }
+    }));
+    //--------------------------GET SEEN AND UNSEEN MESSAGES-------------------------------------
+    router.get('/get_all_messages_of_seen_userid/:receiver_id', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        const { receiver_id } = req.params;
+        try {
+            const connection = yield (0, Database_1.connectToDatabase)();
+            const seen_messages_of_user = yield connection.execute(`SELECT SENDERID, RECEIVERID, SEEN, COUNT(*)
+  FROM CHATTING_TABLE
+  WHERE RECEIVERID = :receiver_id AND SEEN = 'N'
+  GROUP BY SENDERID, RECEIVERID, SEEN`, { receiver_id });
+            yield connection.close();
+            const data = seen_messages_of_user && ((_a = seen_messages_of_user.rows) === null || _a === void 0 ? void 0 : _a.map((row) => ({
+                senderId: row[0],
+                receiver_id: row[1],
+                seen: row[2],
+                count: row[3]
+            })));
+            return res.status(200).send(data);
         }
         catch (error) {
             return res.status(500).send({ error: error.message });
