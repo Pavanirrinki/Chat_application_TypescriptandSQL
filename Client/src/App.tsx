@@ -13,6 +13,7 @@ import Statuses from './Components/Statuses';
 import Groups from './Components/Groups';
 import CheckboxListSecondary from './Components/Allprofiles';
 import FavouriteGroups from './Components/FavouriteGroups';
+import VideoCalling from './Components/VideoCalling';
 
 function Mainscreen(){
  const [receiverId,setReceiverId] = useState<string>('');
@@ -77,6 +78,7 @@ console.log("socketed",socket);
         <Route path="/groups" element={<Groups />} />
        <Route path ="/all_profiles/:groupId" element={<CheckboxListSecondary />} />
        <Route path ="/favourite_groups"  element={<FavouriteGroups />}/>
+       <Route path ="/video_player/:id"  element ={<VideoCalling />} />
         <Route path ='*'  element={<NotFound />} />
 
       </Routes>

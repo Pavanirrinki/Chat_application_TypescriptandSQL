@@ -28,7 +28,7 @@ export interface OnlineUsers {
   [userId: string]: string; // Maps userId (string) to socket.id (string)
 }
 let onlineusers: OnlineUsers = {};
-
+let videocallingpeers:any ={}
 io.on("connection", (socket) => {
   console.log("A user connected");
 
@@ -44,6 +44,15 @@ io.on("connection", (socket) => {
     socket.join(data); // Join the room corresponding to the group
   });
 
+socket.on("videocalling",(data)=>{
+    videocallingpeers[data.userId] = data.peerId;
+io.emit("allpeers",videocallingpeers);
+})
+  socket.on('dummy-data',(data)=>{
+    console.log(data,'dummy');
+    
+      io.to(onlineusers[data]).emit("dummy2", data);
+  });
   socket.on("groupmessage", (msg) => {
     console.log("chat messag", msg);
     io.to(msg.groupId).emit("chat message", {

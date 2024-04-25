@@ -16,13 +16,23 @@ import {
   CardActionArea,
   CardMedia,
   CardContent,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import KeyboardDoubleArrowDownOutlinedIcon from "@mui/icons-material/KeyboardDoubleArrowDownOutlined";
-import React, { useEffect, useRef, useState } from "react";
+import VideoCallOutlinedIcon from '@mui/icons-material/VideoCallOutlined';
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { SendMessageApi, GetMessage, API } from "./Api";
 import io from "socket.io-client";
 import BasicMenu from "./MenuComponent";
 import axios from "axios";
+import { Navigate, useNavigate } from "react-router-dom";
+import { ChatContext } from "./Context";
+import Peer from "peerjs";
 
 const user_data = localStorage.getItem("Chat_user_details");
 const parsed_data = user_data && JSON.parse(user_data);
@@ -38,13 +48,44 @@ function ChatsScreen({
   profile_pic: String | null;
   setUnseen_messages:any
 }): JSX.Element {
+  const remoteVideoRef = useRef<any>();
+  const currentUserVideoRef = useRef<any>();
+
+
+  const { chatData, setChatData,socket,setSocket,onlineusers} = useContext(ChatContext);
   const [Inputmessage, setInputmessage] = useState<string>("");
+  const [videocalluserId,setVideocalluserId] = useState<String | null>(null);
   const [loaddata, setLoaddata] = useState<Boolean>(false);
   const [chatting, setChatting] = useState<string[] | null>([]);
-  
+  const [userIsoffline,setUserIsoffline] = useState<boolean | String>('p');
+  const [videocallconformation,setVideocallconformation] = useState<boolean>(false);
+  const navigate = useNavigate();
   const [typing, setTyping] = useState<string>("");
-
+  const onlineUserKeys = onlineusers && Object.keys(onlineusers);
   const scrollref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = React.useState(false);
+  const [peerId,setPeerId] = React.useState(null);
+  const [listofPeerIds,setListofPeerIds] = React.useState<any>([]);
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  useEffect(()=>{
+  const peer = new Peer();
+
+  peer.on('open', (id:any) => {
+    const userId = parsed_data?.sendeddata?.userId;
+    setPeerId(id);
+    socket.emit("videocalling",{userId,peerId});
+  });
+  socket.on("allpeers",(data:any)=>{
+    setListofPeerIds(data);
+  }) 
+ },[]);
+
+console.log(listofPeerIds,'love');
+
   useEffect(() => {
     const socket = io("http://localhost:5001/", {
       query: {
@@ -77,11 +118,18 @@ await axios
     socket.on("Typingstop", (data: any) => {
       setTyping(data);
     });
+    socket.on("dummy2",(data:any)=>{
+      console.log(data,parsed_data?.sendeddata?.userId == data,receiverId,'love');
+      setVideocalluserId(data);
+      setOpen(true);
+      })
     return () => {
       socket.disconnect();
     };
-  }, [receiverId]);
-  useEffect(() => {
+  }, [socket,receiverId]);
+
+ 
+useEffect(() => {
     GetMessage(parsed_data?.sendeddata?.userId, receiverId)
       .then((data) => {
         setChatting(data);
@@ -120,11 +168,52 @@ await axios
       .catch((error) => console.log(error));
   };
   console.log("chatting", chatting);
+  console.log("online_users",onlineusers);
+  console.log(listofPeerIds[receiverId],"listofPeerIds[receiverId]")
+ 
+
+  const VideoCallToUser =async() =>{
+
+    if(onlineusers[receiverId]){
+      setUserIsoffline(true);
+      socket.emit("dummy-data",receiverId);
+      const getUserMedia = navigator.mediaDevices.getUserMedia;
+
+      const mediaStream = await getUserMedia({ video: true, audio: true });
+      if (currentUserVideoRef.current) {
+        currentUserVideoRef.current.srcObject = mediaStream;
+        currentUserVideoRef.current.play();
+      }
+      
+      const call = await new Peer().call(listofPeerIds[receiverId], mediaStream);
+       
+      
+      call.on('stream', (remoteStream: MediaProvider | null) => {
+        remoteVideoRef.current.srcObject = remoteStream
+       remoteVideoRef.current.play();
+      });
+    
+      setVideocallconformation(true);
+     // navigate(`/video_player/${receiverId}`);
+    
+    }else{
+      setUserIsoffline(false);
+      setTimeout(()=>{
+          setUserIsoffline('p');
+      },2000);
+    }
+    
+  }
   
+  if(videocallconformation){
+    console.log(videocallconformation ,'hukum');
+   
+  }
   return (
     <>
       {receiverId && receiverId !== undefined ? (
         <Stack sx={{ marginLeft: "20px" }}>
+        
           <ListItemButton
             sx={{
               zIndex: 1000,
@@ -137,6 +226,7 @@ await axios
               },
             }}
           >
+            
             <ListItemAvatar>
               <Avatar
                 alt="Remy Sharp"
@@ -146,8 +236,9 @@ await axios
                     : "/static/images/avatar/1.jpg"
                 }
               />
+            
             </ListItemAvatar>
-           
+
             <Box>
               <ListItemText
                 primary={`${profileName}`}
@@ -162,8 +253,11 @@ await axios
                   marginTop: "0px",
                 }}
               />
+              
             </Box>
-          
+            <Box sx={{marginLeft:"60%"}} >
+            <VideoCallOutlinedIcon sx={{fontSize:"30px",borderRadius:"50%",border:"1px solid black",padding:"2px"}} onClick={VideoCallToUser}/>
+            </Box>
           </ListItemButton>
           <Box
             sx={{
@@ -172,7 +266,8 @@ await axios
               minHeight: "100vh",
             }}
           >
-            <Grid
+       
+          <Grid
               container
               sx={{
                 marginLeft: "10px",
@@ -180,6 +275,8 @@ await axios
                 marginTop: "80px",
               }}
             >
+                {videocallconformation && parsed_data?.sendeddata?.userId == receiverId && <p>kkkkkkkk</p>}
+              {!userIsoffline && <Alert severity="warning" sx={{width:"100%",textAlign:"center",marginLeft:"0px"}}>The user is offline , unavailable to video call</Alert>}
               {chatting &&
                 chatting.map((data: any) => {
                   console.log(data[3]);
@@ -208,7 +305,9 @@ await axios
                               alt="image"
                               style={{ width: 345, height: "200px" }}
                             />
+                           
                           )}
+                          
                         { 
                           data.message.length < 4000 &&
                           !data?.statusId && (
@@ -289,6 +388,30 @@ await axios
                     </React.Fragment>
                   );
                 })}
+                 {videocalluserId && videocalluserId == parsed_data?.sendeddata?.userId && <React.Fragment>
+    
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Use Google's location service?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Pavan is callling you
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Disagree</Button>
+          <Button onClick={handleClose} autoFocus>
+            Agree
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </React.Fragment>}
             </Grid>
           </Box>
 
@@ -332,6 +455,7 @@ await axios
               </Grid>
             </Grid>
           </Box>
+         
         </Stack>
       ) : (
         <Container
@@ -355,15 +479,20 @@ await axios
               </Typography>
             </Box>
           </Paper>
+         
         </Container>
       )}
+
+<div>
+        <video ref={currentUserVideoRef} />
+      </div>
+      <div>
+        <video ref={remoteVideoRef} />
+      </div>
+
+
     </>
   );
 }
 
 export default ChatsScreen;
-
-
-
-
-
